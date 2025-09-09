@@ -8,7 +8,7 @@ export default function LocationCTA() {
   return (
     <section className="relative  overflow-hidden">
       {/* Simple Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black to-neutral-700"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-neutral-500 to-neutral-700"></div>
       
       {/* Content */}
       <div className="relative z-10 py-20">
