@@ -25,7 +25,7 @@ export default function LocationCTA() {
             </p>
             <div className="flex justify-center">
               <a
-                href={process.env.NEXT_PUBLIC_MESSENGER_URL || '#'}
+                href={process.env.NEXT_PUBLIC_MESSENGER_URL || 'https://m.me/steve.m.white.3'}
                 className="inline-flex items-center justify-center gap-3 bg-white text-red-600 hover:bg-gray-100 hover:text-red-700 font-bold py-4 px-8 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                 style={{ color: '#dc2626' }}
               >

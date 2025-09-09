@@ -113,7 +113,7 @@ Your Adonai Tattoo website is now **100% production-ready** with enterprise-grad
 ```env
 NEXT_PUBLIC_ADDRESS="4606 A Covert Ave, Evansville, IN 47714"
 NEXT_PUBLIC_PHONE_NUMBER="+1-812-555-0123"
-NEXT_PUBLIC_MESSENGER_URL="https://m.me/adonaitattoo"
+NEXT_PUBLIC_MESSENGER_URL="https://m.me/steve.m.white.3"
 ```
 
 ### Validation Commands

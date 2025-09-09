@@ -52,7 +52,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <a 
-                  href={process.env.NEXT_PUBLIC_MESSENGER_URL || '#'}
+                  href={process.env.NEXT_PUBLIC_MESSENGER_URL || 'https://m.me/steve.m.white.3'}
                   className="flex items-center gap-2 text-gray-300 hover:text-brand-red transition-colors"
                 >
                   <MessageCircle className="w-4 h-4 text-brand-red" />

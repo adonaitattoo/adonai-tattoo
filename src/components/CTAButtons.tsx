@@ -8,7 +8,7 @@ interface CTAButtonsProps {
 }
 
 export default function CTAButtons({ isScrolled = false }: CTAButtonsProps) {
-  const messengerUrl = process.env.NEXT_PUBLIC_MESSENGER_URL || 'https://m.me/your-handle';
+  const messengerUrl = process.env.NEXT_PUBLIC_MESSENGER_URL || 'https://m.me/steve.m.white.3';
   const phoneNumber = process.env.NEXT_PUBLIC_PHONE_NUMBER || '+1-812-555-0123';
 
   const handleMessage = () => {
