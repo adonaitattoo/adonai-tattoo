@@ -29,7 +29,7 @@ export default function ValuesSection() {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center py-20 bg-gradient-to-b from-neutral-700 via-black to-neutral-800">
+    <section className="relative min-h-screen flex items-center justify-center py-20 bg-gradient-to-b from-transparent via-black to-transparent">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0 bg-grid-pattern" style={{
