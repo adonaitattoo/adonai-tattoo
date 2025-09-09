@@ -110,8 +110,8 @@ export default function ValuesSection() {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="mt-16"
         >
-          <div className="inline-flex items-center gap-4 border border-yellow-500 rounded-full px-8 py-4">
-            <div className="text-4xl font-bold text-brand-red">21+</div>
+          <div className="inline-flex items-center gap-4 border border-red-900 rounded-full px-8 py-4">
+            <div className="text-4xl font-bold">21+</div>
             <div className="text-left">
               <div className="text-white font-semibold">Years of</div>
               <div className="text-gray-300 text-sm">Faithful Service</div>

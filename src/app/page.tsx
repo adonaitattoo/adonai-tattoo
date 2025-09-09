@@ -10,8 +10,9 @@ import LocationCTA from '@/components/LocationCTA';
 import Footer from '@/components/Footer';
 
 export default function Home() {
-  const address = process.env.NEXT_PUBLIC_ADDRESS || 'Evansville, IN';
-  const phoneNumber = process.env.NEXT_PUBLIC_PHONE_NUMBER || '+1-812-555-0123';
+  // Environment variables for future use
+  // const address = process.env.NEXT_PUBLIC_ADDRESS || '4606 A Covert Ave, Evansville, IN 47714';
+  // const phoneNumber = process.env.NEXT_PUBLIC_PHONE_NUMBER || '+1-812-555-0123';
 
   return (
     <div className="min-h-screen">
@@ -29,9 +30,9 @@ export default function Home() {
         <GallerySection />
       </div>
       <div id="visit">
-        <LocationCTA address={address} phoneNumber={phoneNumber} />
+        <LocationCTA />
       </div>
-      <Footer address={address} phoneNumber={phoneNumber} />
+      <Footer />
     </div>
   );
 }

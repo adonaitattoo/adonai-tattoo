@@ -1,0 +1,20 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+
+# Googlebot
+User-agent: Googlebot
+Allow: /
+
+# Bingbot
+User-agent: Bingbot
+Allow: /
+
+# Host
+Host: https://adonai-tattoo.vercel.app
+
+# Sitemaps
+Sitemap: https://adonai-tattoo.vercel.app/sitemap.xml

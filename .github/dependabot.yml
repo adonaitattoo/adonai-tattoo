@@ -1,0 +1,52 @@
+version: 2
+updates:
+  # Enable version updates for npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Indiana/Indianapolis"
+    open-pull-requests-limit: 10
+    # reviewers:
+    #   - "your-github-username"
+    # assignees:
+    #   - "your-github-username"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    # Group dependencies for cleaner PRs
+    groups:
+      react-ecosystem:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      next-ecosystem:
+        patterns:
+          - "next*"
+          - "@next/*"
+      dev-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "typescript"
+          - "tailwindcss"
+      security-updates:
+        dependency-type: "production"
+        update-types:
+          - "patch"
+
+  # GitHub Actions workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Indiana/Indianapolis"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

@@ -2,20 +2,20 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { MapPin, MessageCircle, Clock } from 'lucide-react';
 
-interface FooterProps {
-  address: string;
-  phoneNumber: string;
-}
+// Interface for future use when props are needed
+// interface FooterProps {
+//   address: string;
+//   phoneNumber: string;
+// }
 
-export default function Footer({ address, phoneNumber }: FooterProps) {
+export default function Footer() {
   return (
     <footer className="bg-gradient-to-b from-brand-black to-neutral-900 py-16 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Main Footer Content */}
-        <div className="grid md:grid-cols-4 gap-8 mb-12">
+        <div className="grid md:grid-cols-3 gap-8 mb-12">
           {/* Logo and Brand */}
           <div className="md:col-span-1">
             <div className="flex flex-col items-center md:items-start">
@@ -50,31 +50,22 @@ export default function Footer({ address, phoneNumber }: FooterProps) {
           <div>
             <h4 className="text-lg font-semibold text-white mb-4">Contact</h4>
             <ul className="space-y-3">
-              <li className="flex items-center gap-2 text-gray-300">
-                <Phone className="w-4 h-4 text-brand-red" />
-                <span className="text-sm">{phoneNumber}</span>
+              <li>
+                <a 
+                  href={process.env.NEXT_PUBLIC_MESSENGER_URL || '#'}
+                  className="flex items-center gap-2 text-gray-300 hover:text-brand-red transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 text-brand-red" />
+                  <span className="text-sm">Message Us</span>
+                </a>
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <MapPin className="w-4 h-4 text-brand-red" />
-                <span className="text-sm">{address}</span>
+                <span className="text-sm">4606 A Covert Ave, Evansville, IN 47714</span>
               </li>
               <li className="flex items-center gap-2 text-gray-300">
                 <Clock className="w-4 h-4 text-brand-red" />
-                <span className="text-sm">By Appointment</span>
-              </li>
-            </ul>
-          </div>
-          
-          {/* Business Hours */}
-          <div>
-            <h4 className="text-lg font-semibold text-white mb-4">Hours</h4>
-            <ul className="space-y-2 text-gray-300 text-sm">
-              <li>Tuesday - Saturday</li>
-              <li>By Appointment Only</li>
-              <li className="mt-4">
-                <span className="text-brand-red font-semibold">Walk-ins Welcome</span>
-                <br />
-                <span className="text-xs">Subject to availability</span>
+                <span className="text-sm">By Appointment Only</span>
               </li>
             </ul>
           </div>
@@ -88,7 +79,7 @@ export default function Footer({ address, phoneNumber }: FooterProps) {
           <div className="text-center md:text-left">
             <p className="text-gray-400 mb-2">© 2024 Adonai Tattoo. All rights reserved.</p>
             <p className="text-gray-500 text-sm">
-              Honoring God through art and community in {address}
+              Honoring God through art and community in Evansville, IN
             </p>
           </div>
           

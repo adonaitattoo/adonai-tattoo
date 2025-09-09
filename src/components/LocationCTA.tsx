@@ -2,14 +2,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, MessageCircle, Phone } from 'lucide-react';
+import { MapPin, MessageCircle } from 'lucide-react';
 
-interface LocationCTAProps {
-  address: string;
-  phoneNumber: string;
-}
-
-export default function LocationCTA({ address, phoneNumber }: LocationCTAProps) {
+export default function LocationCTA() {
   return (
     <section className="relative  overflow-hidden">
       {/* Simple Background */}
@@ -28,7 +23,7 @@ export default function LocationCTA({ address, phoneNumber }: LocationCTAProps) 
             <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
               Let&apos;s create something beautiful together. Reach out to schedule your consultation.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex justify-center">
               <a
                 href={process.env.NEXT_PUBLIC_MESSENGER_URL || '#'}
                 className="inline-flex items-center justify-center gap-3 bg-white text-red-600 hover:bg-gray-100 hover:text-red-700 font-bold py-4 px-8 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
@@ -36,13 +31,6 @@ export default function LocationCTA({ address, phoneNumber }: LocationCTAProps) 
               >
                 <MessageCircle size={24} />
                 <span style={{ color: '#dc2626' }}>Message Us</span>
-              </a>
-              <a
-                href={`tel:${phoneNumber}`}
-                className="inline-flex items-center justify-center gap-3 border-2 border-white text-white hover:bg-white hover:text-red-600 font-bold py-4 px-8 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                <Phone size={24} />
-                Call Us
               </a>
             </div>
           </motion.div>
@@ -56,9 +44,11 @@ export default function LocationCTA({ address, phoneNumber }: LocationCTAProps) 
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <h3 className="text-3xl font-bold mb-8 text-white">Visit Our Studio</h3>
-            <div className="flex items-center justify-center gap-4 text-xl text-gray-200">
-              <MapPin className="w-8 h-8 text-white" />
-              <span>{address}</span>
+            <div className="flex flex-col items-center gap-4 text-xl text-gray-200">
+              <div className="flex items-center gap-4">
+                <MapPin className="w-8 h-8 text-white" />
+                <span>4606 A Covert Ave, Evansville, IN 47714</span>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -72,7 +62,7 @@ export default function LocationCTA({ address, phoneNumber }: LocationCTAProps) 
         className="w-full h-96 relative"
       >
         <iframe
-          src={`https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`}
+          src={`https://www.google.com/maps?q=${encodeURIComponent('4606 A Covert Ave, Evansville, IN 47714')}&output=embed`}
           width="100%"
           height="100%"
           style={{ border: 0 }}

@@ -21,8 +21,6 @@ export default function GallerySection() {
   const [hasMore, setHasMore] = useState(true);
   const [allLoaded, setAllLoaded] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadTriggerRef = useRef<HTMLDivElement>(null);
 
 
   // Generate random image data using Picsum Photos
@@ -77,31 +75,6 @@ export default function GallerySection() {
     setDisplayedItems(initialItems);
   }, [generateRandomImage]);
 
-  // Intersection Observer for infinite scroll
-  useEffect(() => {
-    if (!loadTriggerRef.current || !hasMore) return;
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const target = entries[0];
-        if (target.isIntersecting && hasMore && !loading) {
-          loadMoreItems();
-        }
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '100px'
-      }
-    );
-
-    observerRef.current.observe(loadTriggerRef.current);
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [hasMore, loading, loadMoreItems]);
 
   return (
     <section 
@@ -176,22 +149,31 @@ export default function GallerySection() {
           ))}
         </div>
 
-        {/* Load Trigger Element */}
-        {hasMore && (
-          <div ref={loadTriggerRef} className="h-10 w-full"></div>
+        {/* Load More Button */}
+        {hasMore && !allLoaded && (
+          <div className="flex justify-center mt-12">
+            <button
+              onClick={loadMoreItems}
+              disabled={loading}
+              className="bg-brand-red hover:bg-red-700 disabled:bg-gray-600 text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center gap-3"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <span>Load More Artwork</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
         )}
 
-        {/* Loading Indicator */}
-        {loading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-center items-center mt-8 mb-4"
-          >
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
-            <span className="ml-3 text-gray-300">Loading more artwork...</span>
-          </motion.div>
-        )}
 
         {/* End Message */}
         {allLoaded && (
