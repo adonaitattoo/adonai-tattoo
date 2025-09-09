@@ -100,27 +100,9 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Redirects for SEO (only in production)
+  // Redirects for SEO (disabled to prevent redirect loops)
   async redirects() {
-    // Skip redirects in development to avoid redirect loops
-    if (process.env.NODE_ENV !== 'production') {
-      return [];
-    }
-
-    return [
-      // Redirect trailing slashes for consistency
-      {
-        source: '/:path((?!.*\\.).*)',
-        has: [
-          {
-            type: 'header',
-            key: 'host',
-          },
-        ],
-        destination: '/:path/',
-        permanent: true,
-      },
-    ];
+    return [];
   },
 
   // Output configuration for Vercel deployment
