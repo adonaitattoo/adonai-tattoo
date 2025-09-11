@@ -40,7 +40,7 @@ export default function HeroSection() {
           style={{ 
             transform: 'translateZ(0)',
             willChange: 'transform',
-            background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #0b0b0b 100%)',
+            background: 'linear-gradient(135deg, #0b0b0b 0%, #991b1b 50%, #dc2626 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
