@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const [uploadProgress, setUploadProgress] = useState<Record<string, 'uploading' | 'success' | 'error'>>({});
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [storageUsed, setStorageUsed] = useState(0);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const router = useRouter();
 
   const getAdminInfo = () => {
@@ -134,18 +135,41 @@ export default function AdminDashboard() {
     fetchImages(); // Refresh gallery
   };
 
-  const handleDeleteImage = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this image?')) return;
+  const handleImageSelect = (id: string) => {
+    setSelectedImages(prev => 
+      prev.includes(id) 
+        ? prev.filter(imgId => imgId !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedImages.length === 0) return;
+    
+    const confirmMessage = selectedImages.length === 1 
+      ? 'Are you sure you want to delete this image?'
+      : `Are you sure you want to delete ${selectedImages.length} images?`;
+    
+    if (!confirm(confirmMessage)) return;
 
     try {
       const { deleteGalleryImage } = await import('@/lib/firebase-client-admin');
-      await deleteGalleryImage(id);
-      setImages(images.filter(img => img.id !== id));
+      
+      // Delete all selected images
+      await Promise.all(selectedImages.map(id => deleteGalleryImage(id)));
+      
+      // Update local state
+      setImages(images.filter(img => !selectedImages.includes(img.id)));
+      setSelectedImages([]);
       fetchImages(); // Refresh to update counts
     } catch (error) {
-      console.error('Error deleting image:', error);
+      console.error('Error deleting images:', error);
       alert('Delete failed. Please try again.');
     }
+  };
+
+  const clearSelection = () => {
+    setSelectedImages([]);
   };
 
   const clearSelectedFiles = () => {
@@ -316,7 +340,31 @@ export default function AdminDashboard() {
 
         {/* Gallery Management */}
         <div className="bg-white rounded-xl shadow-sm border p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Manage Gallery</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Manage Gallery</h2>
+            
+            {/* Selection Controls */}
+            {selectedImages.length > 0 && (
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-600">
+                  {selectedImages.length} selected
+                </span>
+                <button
+                  onClick={clearSelection}
+                  className="text-sm text-gray-500 hover:text-gray-700 underline"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  className="flex items-center space-x-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete ({selectedImages.length})</span>
+                </button>
+              </div>
+            )}
+          </div>
           
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
@@ -330,32 +378,48 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {images.map((image) => (
-                <div key={image.id} className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square">
-                  <Image
-                    src={image.imageUrl}
-                    alt="Gallery image"
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 50vw, 33vw"
-                  />
-                  
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => handleDeleteImage(image.id)}
-                    className="absolute top-2 right-2 w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+              {images.map((image) => {
+                const isSelected = selectedImages.includes(image.id);
+                return (
+                  <div 
+                    key={image.id} 
+                    className={`relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all duration-200 ${
+                      isSelected ? 'ring-4 ring-blue-500 ring-opacity-75' : ''
+                    }`}
+                    onClick={() => handleImageSelect(image.id)}
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  
-                  {/* Image Info */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-xs truncate">
-                      {new Date(image.createdAt).toLocaleDateString()}
-                    </p>
+                    <Image
+                      src={image.imageUrl}
+                      alt="Gallery image"
+                      fill
+                      className={`object-cover transition-all duration-200 ${
+                        isSelected ? 'opacity-80' : 'opacity-100'
+                      }`}
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                    />
+                    
+                    {/* Selection Checkbox */}
+                    <div className={`absolute top-2 left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                      isSelected 
+                        ? 'bg-blue-500 border-blue-500' 
+                        : 'bg-white/80 border-gray-300 backdrop-blur-sm'
+                    }`}>
+                      {isSelected && (
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    
+                    {/* Image Info */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2">
+                      <p className="text-xs truncate">
+                        {new Date(image.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -364,10 +428,10 @@ export default function AdminDashboard() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Mobile Tips</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Hold and select multiple images at once</li>
+            <li>• Tap images to select multiple for deletion</li>
             <li>• Images are automatically optimized for web</li>
-            <li>• Tap and hold an image to see delete option</li>
             <li>• Check storage usage regularly to avoid overages</li>
+            <li>• Selected images show a blue ring and checkbox</li>
           </ul>
         </div>
       </main>
