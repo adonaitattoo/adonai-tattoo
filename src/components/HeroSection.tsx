@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { useParallaxBackground } from '../hooks/useParallax';
 
 export default function HeroSection() {
@@ -15,18 +16,18 @@ export default function HeroSection() {
       ref={parallaxRef}
       className="relative h-screen flex items-start justify-end overflow-hidden parallax-container"
     >
-      {/* Background Video with Parallax */}
+      {/* Background Image with Parallax */}
       <div className="parallax-bg z-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-        >
-          <source src="/Hero.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        <Image
+          src="/Hero_Jesus_Tat.jpg"
+          alt="Adonai Tattoo - Professional Christian Tattoo Artistry"
+          fill
+          className="object-cover"
+          priority
+          quality={95}
+        />
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
       </div>
       
       {/* Content - Positioned to Top Right, Moved Slightly Left */}
@@ -78,8 +79,23 @@ export default function HeroSection() {
             textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
           }}
         >
-          Where Faith Meets Artistry
+          Sacred Art • Divine Inspiration
         </motion.p>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, delay: 1.2 }}
+          className="bg-black/40 backdrop-blur-sm rounded-lg p-6 border border-white/20"
+        >
+          <p className="text-lg md:text-xl text-white/90 font-light leading-relaxed">
+            "He has filled them with skill to do all kinds of work as engravers, 
+            designers, embroiderers... and weavers—all of them skilled workers and designers."
+          </p>
+          <p className="text-sm md:text-base text-white/70 mt-2 italic">
+            — Exodus 35:35
+          </p>
+        </motion.div>
       </div>
       
       {/* Scripture Quote - Centered at Bottom, Fully Visible */}
