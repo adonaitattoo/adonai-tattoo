@@ -97,8 +97,8 @@ export default function Header() {
 
           {/* Desktop Layout */}
           <div className="hidden md:flex items-center justify-between w-full">
-            {/* Logo - left aligned on desktop */}
-            <div className="flex-shrink-0">
+            {/* Logo - far left aligned on desktop */}
+            <div className="flex-shrink-0 pl-0">
               <LogoBadge isScrolled={isScrolled} onClick={handleLogoClick} hideTitleOnMobile={false} />
             </div>
             

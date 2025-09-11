@@ -31,7 +31,7 @@ export default function HeroSection() {
       </div>
       
       {/* Content - Positioned to Top Right, Moved Slightly Left */}
-      <div className="relative z-20 text-right px-12 py-24 max-w-2xl mr-8">
+      <div className="relative z-20 text-right px-6 md:px-12 py-24 max-w-2xl mr-4 md:mr-8 flex flex-col items-end">
         <motion.h1 
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -57,7 +57,7 @@ export default function HeroSection() {
           style={{ 
             transform: 'translateZ(0)',
             willChange: 'transform',
-            background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #0b0b0b 100%)',
+            background: 'linear-gradient(135deg, #0b0b0b 0%, #991b1b 50%, #dc2626 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
@@ -86,13 +86,13 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 1.2 }}
-          className="bg-black/40 backdrop-blur-sm rounded-lg p-6 border border-white/20"
+          className="mb-8"
         >
-          <p className="text-lg md:text-xl text-white/90 font-light leading-relaxed">
+          <p className="text-lg md:text-xl text-white/90 font-light leading-relaxed drop-shadow-lg">
             &ldquo;He has filled them with skill to do all kinds of work as engravers, 
             designers, embroiderers... and weavers—all of them skilled workers and designers.&rdquo;
           </p>
-          <p className="text-sm md:text-base text-white/70 mt-2 italic">
+          <p className="text-sm md:text-base text-white/70 mt-2 italic drop-shadow-lg">
             — Exodus 35:35
           </p>
         </motion.div>

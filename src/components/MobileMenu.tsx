@@ -22,7 +22,7 @@ export default function MobileMenu({ isOpen, onClose, navigationItems, scrollToS
   return (
     <>
       {/* Mobile Navigation Menu */}
-      <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-brand-black/90 backdrop-blur-md border-b border-black shadow-xl">
+      <div className="md:hidden fixed top-[72px] left-0 right-0 z-40 bg-brand-black/90 backdrop-blur-md border-b border-black shadow-xl">
         <div className="max-w-6xl mx-auto px-4 py-6">
           {/* Navigation Links - Centered on Mobile */}
           <nav className="flex flex-col items-center gap-4">
