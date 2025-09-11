@@ -89,8 +89,8 @@ export default function HeroSection() {
           className="bg-black/40 backdrop-blur-sm rounded-lg p-6 border border-white/20"
         >
           <p className="text-lg md:text-xl text-white/90 font-light leading-relaxed">
-            "He has filled them with skill to do all kinds of work as engravers, 
-            designers, embroiderers... and weavers—all of them skilled workers and designers."
+            &ldquo;He has filled them with skill to do all kinds of work as engravers, 
+            designers, embroiderers... and weavers—all of them skilled workers and designers.&rdquo;
           </p>
           <p className="text-sm md:text-base text-white/70 mt-2 italic">
             — Exodus 35:35
