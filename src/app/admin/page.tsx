@@ -8,7 +8,11 @@ import {
   LogOut, 
   Images,
   Plus,
-  AlertTriangle
+  AlertTriangle,
+  Settings,
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import Image from 'next/image';
 import { getCurrentUser } from '@/lib/firebase-client-admin';
@@ -30,6 +34,14 @@ export default function AdminDashboard() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [storageUsed, setStorageUsed] = useState(0);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const router = useRouter();
 
   const getAdminInfo = () => {
@@ -172,6 +184,58 @@ export default function AdminDashboard() {
     setSelectedImages([]);
   };
 
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      alert('New passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters long');
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    
+    try {
+      const { signInWithEmailAndPassword, updatePassword } = await import('firebase/auth');
+      const { auth } = await import('@/lib/firebase');
+      
+      // Get current user email
+      const adminInfo = getAdminInfo();
+      const userEmail = currentUser?.email || adminInfo.email;
+      
+      // Re-authenticate user with current password
+      const credential = await signInWithEmailAndPassword(auth, userEmail, currentPassword);
+      
+      // Update password
+      await updatePassword(credential.user, newPassword);
+      
+      // Clear form and close modal
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowSettings(false);
+      
+      alert('Password updated successfully!');
+    } catch (error) {
+      console.error('Password change error:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('wrong-password')) {
+          alert('Current password is incorrect');
+        } else if (error.message.includes('weak-password')) {
+          alert('New password is too weak. Please choose a stronger password.');
+        } else {
+          alert('Failed to update password. Please try again.');
+        }
+      }
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const clearSelectedFiles = () => {
     setSelectedFiles([]);
     setUploadProgress({});
@@ -214,6 +278,16 @@ export default function AdminDashboard() {
       </header>
 
       <main className="px-4 py-6 space-y-6">
+        {/* Settings Button */}
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+          >
+            <Settings className="w-4 h-4" />
+            <span className="text-sm">Settings</span>
+          </button>
+        </div>
         {/* Gallery Overview */}
         <div className="bg-white rounded-xl shadow-sm border p-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Gallery Overview</h2>
@@ -435,6 +509,154 @@ export default function AdminDashboard() {
           </ul>
         </div>
       </main>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-lg font-semibold text-gray-900">Settings</h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {/* User Info */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-sm font-medium text-gray-900 mb-2">Current User</h3>
+                <p className="text-sm text-gray-600">{currentUser?.email || 'Loading...'}</p>
+              </div>
+
+              {/* Change Password Form */}
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Change Password</h3>
+                
+                {/* Current Password */}
+                <div>
+                  <label htmlFor="current-password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Current Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="current-password"
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
+                      placeholder="Enter current password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      {showCurrentPassword ? (
+                        <EyeOff className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="new-password"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      autoComplete="new-password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
+                      placeholder="Enter new password (min 6 characters)"
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="confirm-password"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      autoComplete="new-password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
+                      placeholder="Confirm new password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowSettings(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors flex items-center justify-center"
+                  >
+                    {isChangingPassword ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Password'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
