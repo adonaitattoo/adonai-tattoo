@@ -11,8 +11,9 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
 
-# Admin Authentication (the email address that will have admin access)
+# Admin Authentication (email addresses that will have admin access)
 ADMIN_EMAIL=your_admin_email@domain.com
+CLIENT_EMAIL=stevewhitetattoo@gmail.com
 
 # Security (generate with: openssl rand -base64 32)
 NEXTAUTH_SECRET=your_super_secure_random_string_here

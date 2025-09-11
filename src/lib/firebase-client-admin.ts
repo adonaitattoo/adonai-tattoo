@@ -50,9 +50,10 @@ export const getCurrentUser = (): Promise<User | null> => {
 };
 
 export const isAdminUser = (user: User | null): boolean => {
-  // Get admin email from environment (available on client side as NEXT_PUBLIC_)
+  // Get admin emails from environment (available on client side as NEXT_PUBLIC_)
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
-  return user?.email === adminEmail;
+  const clientEmail = process.env.NEXT_PUBLIC_CLIENT_EMAIL || process.env.CLIENT_EMAIL;
+  return user?.email === adminEmail || user?.email === clientEmail;
 };
 
 // Verify admin access via server-side middleware (no client-side Firebase auth needed)
@@ -70,12 +71,14 @@ export const addGalleryImage = async (imageData: {
 
   const galleryRef = collection(db, 'gallery');
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+  const clientEmail = process.env.NEXT_PUBLIC_CLIENT_EMAIL || process.env.CLIENT_EMAIL;
+  const currentUserEmail = adminEmail || clientEmail; // Use admin email as primary, fallback to client
   return await addDoc(galleryRef, {
     ...imageData,
     title: '',
     description: '',
     tags: [],
-    adminEmail: adminEmail,
+    adminEmail: currentUserEmail,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
@@ -136,9 +139,11 @@ export const uploadImageToStorage = async (file: File): Promise<string> => {
   
   // Add metadata including admin email for security rules
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+  const clientEmail = process.env.NEXT_PUBLIC_CLIENT_EMAIL || process.env.CLIENT_EMAIL;
+  const currentUserEmail = adminEmail || clientEmail; // Use admin email as primary, fallback to client
   const metadata = {
     customMetadata: {
-      adminEmail: adminEmail || '',
+      adminEmail: currentUserEmail || '',
       originalName: file.name,
       uploadedAt: new Date().toISOString(),
     },

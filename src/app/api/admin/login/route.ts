@@ -6,8 +6,9 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password, rememberMe } = await request.json();
 
-    // Validate admin email
-    if (email !== process.env.ADMIN_EMAIL) {
+    // Validate admin email (check both admin and client emails)
+    const isAuthorizedEmail = email === process.env.ADMIN_EMAIL || email === process.env.CLIENT_EMAIL;
+    if (!isAuthorizedEmail) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }

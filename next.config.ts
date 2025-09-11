@@ -81,6 +81,7 @@ const nextConfig: NextConfig = {
   // Environment variables
   env: {
     NEXT_PUBLIC_ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+    NEXT_PUBLIC_CLIENT_EMAIL: process.env.CLIENT_EMAIL,
   },
 };
 
