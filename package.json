@@ -20,11 +20,12 @@
     "lighthouse": "lhci autorun",
     "export": "next export",
     "optimize-images": "node scripts/optimize-images.js",
-    "prebuild": "echo 'Skipping image optimization'",
     "validate": "node scripts/validate-production.js",
-    "prevalidate": "npm run type-check && npm run lint"
+    "prevalidate": "npm run type-check && npm run lint",
+    "prebuild": "echo 'Skipping image optimization'"
   },
   "dependencies": {
+    "firebase": "^12.2.1",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.542.0",
     "next": "15.5.2",
@@ -34,12 +35,12 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@lhci/cli": "^0.12.0",
+    "@next/bundle-analyzer": "^15.5.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@next/bundle-analyzer": "^15.5.2",
-    "@lhci/cli": "^0.12.0",
     "audit-ci": "^7.0.1",
     "cross-env": "^7.0.3",
     "eslint": "^9",

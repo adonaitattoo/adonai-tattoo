@@ -5,75 +5,98 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 
 interface GalleryItem {
-  id: number;
+  id: string;
   title: string;
-  image: string;
+  imageUrl: string;
   description: string;
+  tags: string[];
+  order: number;
+  createdAt: string;
   height?: number;
   uniqueKey?: string;
 }
 
-// Using Picsum Photos for reliable random image generation
+// Gallery component that fetches images from Firebase admin CMS
 
 export default function GallerySection() {
   const [displayedItems, setDisplayedItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [allLoaded, setAllLoaded] = useState(false);
+  const [lastImageId, setLastImageId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
 
-
-  // Generate random image data using Picsum Photos
-  const generateRandomImage = useCallback((id: number): GalleryItem => {
-    const randomHeight = Math.floor(Math.random() * 200) + 300;
-    const width = 400;
+  // Fetch images from Firebase
+  const fetchGalleryImages = useCallback(async (isLoadMore = false) => {
+    if (loading) return;
     
-    // Using Picsum Photos for reliable image loading
-    const imageUrl = `https://picsum.photos/${width}/${randomHeight}?random=${id}`;
+    setLoading(true);
+    setError(null);
     
-    return {
-      id,
-      title: `Artwork ${id}`,
-      image: imageUrl,
-      description: "Professional tattoo artistry and sacred design",
-      height: randomHeight,
-      uniqueKey: `img-${id}-${Math.random().toString(36).substr(2, 9)}-${Date.now()}`
-    };
-  }, []);
+    try {
+      const params = new URLSearchParams({
+        limit: '9',
+      });
+      
+      if (isLoadMore && lastImageId) {
+        params.append('lastImageId', lastImageId);
+      }
+      
+      const response = await fetch(`/api/gallery?${params}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        const newItems = data.images.map((item: GalleryItem) => ({
+          ...item,
+          height: Math.floor(Math.random() * 200) + 300, // Random height for masonry layout
+          uniqueKey: `img-${item.id}-${Math.random().toString(36).substr(2, 9)}`
+        }));
+        
+        if (isLoadMore) {
+          setDisplayedItems(prev => [...prev, ...newItems]);
+        } else {
+          setDisplayedItems(newItems);
+        }
+        
+        setHasMore(data.hasMore);
+        setLastImageId(data.lastImageId);
+        
+        if (!data.hasMore) {
+          setAllLoaded(true);
+        }
+      } else {
+        setError(data.error || 'Failed to load gallery');
+        // Fall back to showing no images rather than random ones
+        if (!isLoadMore) {
+          setDisplayedItems([]);
+        }
+        setHasMore(false);
+        setAllLoaded(true);
+      }
+    } catch (error) {
+      console.error('Error fetching gallery:', error);
+      setError('Unable to load gallery');
+      if (!isLoadMore) {
+        setDisplayedItems([]);
+      }
+      setHasMore(false);
+      setAllLoaded(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, lastImageId]);
 
   // Load more items function
   const loadMoreItems = useCallback(() => {
-    if (loading || !hasMore) return;
-    
-    const currentLength = displayedItems.length;
-    
-    // Stop at 30 images total
-    if (currentLength >= 30) {
-      setHasMore(false);
-      setAllLoaded(true);
-      return;
-    }
-    
-    setLoading(true);
-    
-    // Generate and add 8 new images directly
-    setTimeout(() => {
-      const newItems = Array.from({ length: 8 }, (_, index) => 
-        generateRandomImage(currentLength + index + 1)
-      );
-      
-      setDisplayedItems(prev => [...prev, ...newItems]);
-      setLoading(false);
-    }, 500);
-  }, [loading, hasMore, displayedItems.length, generateRandomImage]);
+    fetchGalleryImages(true);
+  }, [fetchGalleryImages]);
 
   // Load initial items
   useEffect(() => {
-    const initialItems = Array.from({ length: 9 }, (_, index) => 
-      generateRandomImage(index + 1)
-    );
-    setDisplayedItems(initialItems);
-  }, [generateRandomImage]);
+    fetchGalleryImages(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   return (
@@ -100,54 +123,69 @@ export default function GallerySection() {
           Each piece tells a story of faith, hope, and personal journey. Browse our collection of Christian-inspired artwork.
         </motion.p>
         
+        {/* Error Message */}
+        {error && (
+          <div className="text-center mb-8">
+            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+              <p className="text-red-300 mb-2">Unable to load gallery</p>
+              <p className="text-gray-400 text-sm">{error}</p>
+              <button 
+                onClick={() => fetchGalleryImages(false)}
+                className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && displayedItems.length === 0 && (
+          <div className="text-center py-16">
+            <div className="bg-neutral-800/50 rounded-xl p-8 border border-white/10">
+              <h3 className="text-xl font-semibold text-white mb-2">Gallery Coming Soon</h3>
+              <p className="text-gray-400">We&apos;re currently updating our gallery with amazing new artwork.</p>
+              <p className="text-gray-400 text-sm mt-2">Check back soon to see our latest creations!</p>
+            </div>
+          </div>
+        )}
+
         {/* Masonry Grid Layout */}
-        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
-          {displayedItems.map((item, index) => (
-            <motion.div
-              key={item.uniqueKey}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: (index % 6) * 0.1 }}
-              className="gallery-item group relative bg-neutral-800 rounded-lg overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer shadow-xl hover:shadow-2xl border border-white/10 hover:border-brand-red/30 break-inside-avoid mb-4"
-              style={{ height: `${item.height}px` }}
-            >
-              {/* Image */}
-              <div className="absolute inset-0">
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                  priority={index < 9}
-                  unoptimized={true}
-                  onError={(e) => {
-                    console.error('Image failed to load:', item.image, e);
-                    // Fallback to a different Picsum image
-                    const target = e.target as HTMLImageElement;
-                    if (target.src.includes('picsum.photos')) {
-                      target.src = `https://picsum.photos/400/${item.height}?random=${item.id + 1000}`;
-                    }
-                  }}
-                />
-              </div>
+        {displayedItems.length > 0 && (
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+            {displayedItems.map((item, index) => (
+              <motion.div
+                key={item.uniqueKey}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: (index % 6) * 0.1 }}
+                className="gallery-item group relative bg-neutral-800 rounded-lg overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer shadow-xl hover:shadow-2xl border border-white/10 hover:border-brand-red/30 break-inside-avoid mb-4"
+                style={{ height: `${item.height}px` }}
+              >
+                {/* Image */}
+                <div className="absolute inset-0">
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                    priority={index < 9}
+                    unoptimized={true}
+                    onError={() => {
+                    }}
+                  />
+                </div>
               
-              {/* Enhanced Overlay for better contrast */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              
-              {/* Content */}
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-end p-4 text-center">
-                <h3 className="text-white font-semibold mb-1 text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg">{item.title}</h3>
-                <p className="text-gray-200 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg">
-                  {item.description}
-                </p>
-              </div>
+              {/* Simple hover overlay for visual effect only */}
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               {/* Enhanced Border Effect */}
               <div className="absolute inset-0 border border-transparent group-hover:border-brand-red/50 rounded-lg transition-colors duration-300"></div>
             </motion.div>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Load More Button */}
         {hasMore && !allLoaded && (

@@ -2,210 +2,395 @@
 
 /**
  * Production Readiness Validation Script
- * Checks if the application is ready for production deployment
+ * Usage: node scripts/validate-production.js
  */
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
-console.log('🔍 Validating production readiness...\n');
+// Configuration
+const CONFIG = {
+  requiredEnvVars: [
+    'NEXT_PUBLIC_FIREBASE_API_KEY',
+    'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+    'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+    'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
+    'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
+    'NEXT_PUBLIC_FIREBASE_APP_ID',
+    'ADMIN_EMAIL',
+    'NEXTAUTH_SECRET'
+  ],
+  requiredFiles: [
+    'next.config.ts',
+    'middleware.ts',
+    'public/manifest.json',
+    'public/robots.txt',
+    'src/app/layout.tsx',
+    'src/lib/firebase.ts',
+    'src/lib/firebase-client-admin.ts'
+  ],
+  requiredDirs: [
+    'src/app/admin',
+    'src/app/api/admin',
+    'src/components',
+    'public'
+  ],
+  buildDir: '.next',
+  maxImageSize: 5 * 1024 * 1024, // 5MB
+  maxBuildSize: 50 * 1024 * 1024 // 50MB
+};
 
-let errors = [];
-let warnings = [];
-
-// Check required files
-const requiredFiles = [
-  'next.config.ts',
-  'package.json',
-  'vercel.json',
-  'public/robots.txt',
-  'public/sitemap.xml',
-  'public/manifest.json',
-  '.github/workflows/ci.yml',
-  '.github/dependabot.yml',
-  '.lighthouserc.json'
-];
-
-console.log('📁 Checking required files...');
-requiredFiles.forEach(file => {
-  if (fs.existsSync(path.join(__dirname, '..', file))) {
-    console.log(`✅ ${file}`);
-  } else {
-    errors.push(`Missing required file: ${file}`);
-    console.log(`❌ ${file}`);
+class ProductionValidator {
+  constructor() {
+    this.errors = [];
+    this.warnings = [];
+    this.passed = [];
   }
-});
 
-// Check environment variables
-console.log('\n🌍 Checking environment configuration...');
-const requiredEnvVars = [
-  'NEXT_PUBLIC_ADDRESS',
-  'NEXT_PUBLIC_PHONE_NUMBER', 
-  'NEXT_PUBLIC_MESSENGER_URL'
-];
-
-requiredEnvVars.forEach(envVar => {
-  if (process.env[envVar]) {
-    console.log(`✅ ${envVar} is set`);
-  } else {
-    warnings.push(`Environment variable ${envVar} is not set`);
-    console.log(`⚠️  ${envVar} is not set`);
-  }
-});
-
-// Check package.json dependencies
-console.log('\n📦 Checking dependencies...');
-try {
-  const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-  
-  const requiredDeps = ['next', 'react', 'react-dom'];
-  const requiredDevDeps = ['typescript', 'eslint', '@next/bundle-analyzer'];
-  
-  requiredDeps.forEach(dep => {
-    if (packageJson.dependencies[dep]) {
-      console.log(`✅ ${dep} (${packageJson.dependencies[dep]})`);
-    } else {
-      errors.push(`Missing required dependency: ${dep}`);
-    }
-  });
-  
-  requiredDevDeps.forEach(dep => {
-    if (packageJson.devDependencies[dep]) {
-      console.log(`✅ ${dep} (dev)`);
-    } else {
-      warnings.push(`Missing recommended dev dependency: ${dep}`);
-    }
-  });
-} catch (error) {
-  errors.push('Failed to read package.json');
-}
-
-// Check build configuration
-console.log('\n🔧 Checking build configuration...');
-try {
-  const nextConfigExists = fs.existsSync(path.join(__dirname, '..', 'next.config.ts'));
-  if (nextConfigExists) {
-    console.log('✅ Next.js config found');
+  log(message, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const prefix = {
+      error: '❌',
+      warning: '⚠️',
+      success: '✅',
+      info: 'ℹ️'
+    }[type];
     
-    // Basic config validation
-    const configContent = fs.readFileSync(path.join(__dirname, '..', 'next.config.ts'), 'utf8');
-    if (configContent.includes('headers()')) {
-      console.log('✅ Security headers configured');
-    } else {
-      warnings.push('Security headers not configured in next.config.ts');
-    }
+    console.log(`${prefix} [${timestamp}] ${message}`);
+  }
+
+  addError(message) {
+    this.errors.push(message);
+    this.log(message, 'error');
+  }
+
+  addWarning(message) {
+    this.warnings.push(message);
+    this.log(message, 'warning');
+  }
+
+  addSuccess(message) {
+    this.passed.push(message);
+    this.log(message, 'success');
+  }
+
+  validateEnvironmentVariables() {
+    this.log('Validating environment variables...', 'info');
     
-    if (configContent.includes('images:')) {
-      console.log('✅ Image optimization configured');
-    } else {
-      warnings.push('Image optimization not configured');
+    // Check for .env.local file
+    const envPath = path.join(process.cwd(), '.env.local');
+    if (!fs.existsSync(envPath)) {
+      this.addError('.env.local file not found');
+      return;
+    }
+
+    // Read environment variables
+    const envContent = fs.readFileSync(envPath, 'utf-8');
+    const envVars = new Set();
+    
+    envContent.split('\n').forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        const [key] = trimmed.split('=');
+        if (key) {
+          envVars.add(key.trim());
+        }
+      }
+    });
+
+    // Check required variables
+    CONFIG.requiredEnvVars.forEach(varName => {
+      if (envVars.has(varName)) {
+        this.addSuccess(`Environment variable ${varName} is set`);
+      } else {
+        this.addError(`Missing required environment variable: ${varName}`);
+      }
+    });
+
+    // Check for sensitive data exposure
+    const publicVars = Array.from(envVars).filter(v => v.startsWith('NEXT_PUBLIC_'));
+    if (publicVars.some(v => v.toLowerCase().includes('secret') || v.toLowerCase().includes('private'))) {
+      this.addError('Sensitive data may be exposed in NEXT_PUBLIC_ variables');
     }
   }
-} catch (error) {
-  errors.push('Failed to validate Next.js configuration');
-}
 
-// Check TypeScript configuration
-console.log('\n🔷 Running TypeScript check...');
-try {
-  execSync('npx tsc --noEmit', { stdio: 'pipe' });
-  console.log('✅ TypeScript check passed');
-} catch (error) {
-  errors.push('TypeScript errors found');
-  console.log('❌ TypeScript check failed');
-}
+  validateFileStructure() {
+    this.log('Validating file structure...', 'info');
 
-// Check linting
-console.log('\n🔍 Running ESLint check...');
-try {
-  execSync('npm run lint', { stdio: 'pipe' });
-  console.log('✅ ESLint check passed');
-} catch (error) {
-  warnings.push('ESLint warnings/errors found');
-  console.log('⚠️  ESLint issues found');
-}
+    // Check required files
+    CONFIG.requiredFiles.forEach(filePath => {
+      const fullPath = path.join(process.cwd(), filePath);
+      if (fs.existsSync(fullPath)) {
+        this.addSuccess(`Required file exists: ${filePath}`);
+      } else {
+        this.addError(`Missing required file: ${filePath}`);
+      }
+    });
 
-// Check security audit
-console.log('\n🔒 Running security audit...');
-try {
-  execSync('npm audit --audit-level=high', { stdio: 'pipe' });
-  console.log('✅ No high-severity vulnerabilities');
-} catch (error) {
-  warnings.push('High-severity security vulnerabilities found');
-  console.log('⚠️  Security vulnerabilities detected');
-}
+    // Check required directories
+    CONFIG.requiredDirs.forEach(dirPath => {
+      const fullPath = path.join(process.cwd(), dirPath);
+      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+        this.addSuccess(`Required directory exists: ${dirPath}`);
+      } else {
+        this.addError(`Missing required directory: ${dirPath}`);
+      }
+    });
+  }
 
-// Check build process
-console.log('\n🏗️  Testing build process...');
-try {
-  execSync('npm run build', { stdio: 'pipe' });
-  console.log('✅ Build successful');
-} catch (error) {
-  errors.push('Build process failed');
-  console.log('❌ Build failed');
-}
-
-// Performance recommendations
-console.log('\n⚡ Performance recommendations...');
-const publicDir = path.join(__dirname, '..', 'public');
-if (fs.existsSync(publicDir)) {
-  const files = fs.readdirSync(publicDir);
-  const largeImages = files.filter(file => {
-    if (!['.jpg', '.jpeg', '.png'].includes(path.extname(file).toLowerCase())) return false;
+  validatePackageJson() {
+    this.log('Validating package.json...', 'info');
+    
     try {
-      const stats = fs.statSync(path.join(publicDir, file));
-      return stats.size > 500000; // 500KB
-    } catch {
-      return false;
+      const packagePath = path.join(process.cwd(), 'package.json');
+      const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+
+      // Check required scripts
+      const requiredScripts = ['build', 'start', 'dev'];
+      requiredScripts.forEach(script => {
+        if (packageJson.scripts && packageJson.scripts[script]) {
+          this.addSuccess(`Required script exists: ${script}`);
+        } else {
+          this.addError(`Missing required script: ${script}`);
+        }
+      });
+
+      // Check Firebase dependencies
+      const requiredDeps = ['firebase', 'next', 'react'];
+      requiredDeps.forEach(dep => {
+        if (packageJson.dependencies && packageJson.dependencies[dep]) {
+          this.addSuccess(`Required dependency exists: ${dep}`);
+        } else {
+          this.addError(`Missing required dependency: ${dep}`);
+        }
+      });
+
+      // Check for security vulnerabilities in dependencies
+      if (packageJson.dependencies) {
+        const deps = Object.keys(packageJson.dependencies);
+        if (deps.length > 50) {
+          this.addWarning(`Large number of dependencies (${deps.length}). Consider auditing for unused packages.`);
+        }
+      }
+
+    } catch (error) {
+      this.addError(`Failed to parse package.json: ${error.message}`);
     }
-  });
-  
-  if (largeImages.length > 0) {
-    warnings.push(`Large images detected: ${largeImages.join(', ')}`);
-    console.log('⚠️  Consider optimizing large images');
-  } else {
-    console.log('✅ No large images detected');
+  }
+
+  validateBuildOutput() {
+    this.log('Validating build output...', 'info');
+
+    const buildPath = path.join(process.cwd(), CONFIG.buildDir);
+    if (!fs.existsSync(buildPath)) {
+      this.addWarning('Build directory not found. Run "npm run build" first for complete validation.');
+      return;
+    }
+
+    try {
+      // Check build size
+      const buildSize = this.getDirectorySize(buildPath);
+      if (buildSize > CONFIG.maxBuildSize) {
+        this.addWarning(`Build size (${(buildSize / 1024 / 1024).toFixed(2)}MB) exceeds recommended limit (${CONFIG.maxBuildSize / 1024 / 1024}MB)`);
+      } else {
+        this.addSuccess(`Build size (${(buildSize / 1024 / 1024).toFixed(2)}MB) is within limits`);
+      }
+
+      // Check for essential build files
+      const essentialFiles = [
+        'static',
+        'server/app',
+        'server/pages'
+      ];
+
+      essentialFiles.forEach(file => {
+        const filePath = path.join(buildPath, file);
+        if (fs.existsSync(filePath)) {
+          this.addSuccess(`Build file exists: ${file}`);
+        } else {
+          this.addWarning(`Build file missing: ${file}`);
+        }
+      });
+
+    } catch (error) {
+      this.addError(`Failed to validate build output: ${error.message}`);
+    }
+  }
+
+  validateImages() {
+    this.log('Validating images...', 'info');
+
+    const publicPath = path.join(process.cwd(), 'public');
+    if (!fs.existsSync(publicPath)) {
+      this.addError('Public directory not found');
+      return;
+    }
+
+    const imageFiles = this.findImageFiles(publicPath);
+    let totalImageSize = 0;
+
+    imageFiles.forEach(imagePath => {
+      const stats = fs.statSync(imagePath);
+      totalImageSize += stats.size;
+
+      if (stats.size > CONFIG.maxImageSize) {
+        this.addWarning(`Large image file (${(stats.size / 1024 / 1024).toFixed(2)}MB): ${path.relative(process.cwd(), imagePath)}`);
+      }
+    });
+
+    if (imageFiles.length > 0) {
+      this.addSuccess(`Found ${imageFiles.length} image files (${(totalImageSize / 1024 / 1024).toFixed(2)}MB total)`);
+    }
+
+    // Check for next/image optimization
+    const nextConfigPath = path.join(process.cwd(), 'next.config.ts');
+    if (fs.existsSync(nextConfigPath)) {
+      const configContent = fs.readFileSync(nextConfigPath, 'utf-8');
+      if (configContent.includes('images:') && configContent.includes('remotePatterns')) {
+        this.addSuccess('Next.js image optimization configured');
+      } else {
+        this.addWarning('Next.js image optimization may not be fully configured');
+      }
+    }
+  }
+
+  validateSecurity() {
+    this.log('Validating security configuration...', 'info');
+
+    // Check middleware
+    const middlewarePath = path.join(process.cwd(), 'middleware.ts');
+    if (fs.existsSync(middlewarePath)) {
+      const middlewareContent = fs.readFileSync(middlewarePath, 'utf-8');
+      if (middlewareContent.includes('/admin')) {
+        this.addSuccess('Admin route protection configured');
+      } else {
+        this.addWarning('Admin route protection may not be configured');
+      }
+    } else {
+      this.addError('Middleware file not found');
+    }
+
+    // Check next.config security headers
+    const nextConfigPath = path.join(process.cwd(), 'next.config.ts');
+    if (fs.existsSync(nextConfigPath)) {
+      const configContent = fs.readFileSync(nextConfigPath, 'utf-8');
+      if (configContent.includes('headers:')) {
+        this.addSuccess('Security headers configured');
+      } else {
+        this.addWarning('Security headers may not be configured');
+      }
+    }
+  }
+
+  getDirectorySize(dirPath) {
+    let totalSize = 0;
+    
+    const items = fs.readdirSync(dirPath);
+    items.forEach(item => {
+      const itemPath = path.join(dirPath, item);
+      const stats = fs.statSync(itemPath);
+      
+      if (stats.isDirectory()) {
+        totalSize += this.getDirectorySize(itemPath);
+      } else {
+        totalSize += stats.size;
+      }
+    });
+    
+    return totalSize;
+  }
+
+  findImageFiles(dirPath) {
+    const imageFiles = [];
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    
+    const items = fs.readdirSync(dirPath);
+    items.forEach(item => {
+      const itemPath = path.join(dirPath, item);
+      const stats = fs.statSync(itemPath);
+      
+      if (stats.isDirectory()) {
+        imageFiles.push(...this.findImageFiles(itemPath));
+      } else {
+        const ext = path.extname(item).toLowerCase();
+        if (imageExtensions.includes(ext)) {
+          imageFiles.push(itemPath);
+        }
+      }
+    });
+    
+    return imageFiles;
+  }
+
+  generateReport() {
+    console.log('\n' + '='.repeat(60));
+    console.log('🚀 PRODUCTION READINESS REPORT');
+    console.log('='.repeat(60));
+    
+    console.log(`\n✅ Passed: ${this.passed.length}`);
+    console.log(`⚠️  Warnings: ${this.warnings.length}`);
+    console.log(`❌ Errors: ${this.errors.length}`);
+    
+    if (this.warnings.length > 0) {
+      console.log('\n⚠️  WARNINGS:');
+      this.warnings.forEach((warning, i) => {
+        console.log(`   ${i + 1}. ${warning}`);
+      });
+    }
+    
+    if (this.errors.length > 0) {
+      console.log('\n❌ ERRORS:');
+      this.errors.forEach((error, i) => {
+        console.log(`   ${i + 1}. ${error}`);
+      });
+    }
+    
+    const score = Math.round((this.passed.length / (this.passed.length + this.warnings.length + this.errors.length)) * 100);
+    
+    console.log(`\n📊 READINESS SCORE: ${score}%`);
+    
+    if (this.errors.length === 0) {
+      console.log('\n🎉 Your application is ready for production!');
+      if (this.warnings.length > 0) {
+        console.log('💡 Consider addressing warnings for optimal performance.');
+      }
+    } else {
+      console.log('\n🛑 Your application needs attention before production deployment.');
+      console.log('🔧 Please fix the errors listed above.');
+    }
+    
+    console.log('\n📚 Helpful commands:');
+    console.log('   npm run build          - Build for production');
+    console.log('   npm run optimize-images - Optimize images for better performance');
+    console.log('   npm run lint           - Check code quality');
+    console.log('   npm audit              - Check for security vulnerabilities');
+    
+    return this.errors.length === 0;
+  }
+
+  async validate() {
+    console.log('🔍 Starting production readiness validation...\n');
+    
+    this.validateEnvironmentVariables();
+    this.validateFileStructure();
+    this.validatePackageJson();
+    this.validateBuildOutput();
+    this.validateImages();
+    this.validateSecurity();
+    
+    return this.generateReport();
   }
 }
 
-// SEO validation
-console.log('\n🔍 SEO validation...');
-const robotsExists = fs.existsSync(path.join(__dirname, '..', 'public', 'robots.txt'));
-const sitemapExists = fs.existsSync(path.join(__dirname, '..', 'public', 'sitemap.xml'));
-
-if (robotsExists && sitemapExists) {
-  console.log('✅ SEO files present');
-} else {
-  warnings.push('Missing SEO files (robots.txt, sitemap.xml)');
+async function main() {
+  const validator = new ProductionValidator();
+  const isReady = await validator.validate();
+  
+  process.exit(isReady ? 0 : 1);
 }
 
-// Final report
-console.log('\n📋 VALIDATION REPORT');
-console.log('===================');
-
-if (errors.length === 0 && warnings.length === 0) {
-  console.log('🎉 READY FOR PRODUCTION!');
-  console.log('All checks passed. Your application is production-ready.');
-  process.exit(0);
-} else {
-  if (errors.length > 0) {
-    console.log('\n❌ ERRORS (Must be fixed):');
-    errors.forEach(error => console.log(`  • ${error}`));
-  }
-  
-  if (warnings.length > 0) {
-    console.log('\n⚠️  WARNINGS (Recommended fixes):');
-    warnings.forEach(warning => console.log(`  • ${warning}`));
-  }
-  
-  if (errors.length > 0) {
-    console.log('\n🚫 NOT READY FOR PRODUCTION');
-    console.log('Please fix the errors above before deploying.');
-    process.exit(1);
-  } else {
-    console.log('\n✅ READY FOR PRODUCTION (with warnings)');
-    console.log('Consider addressing the warnings for optimal performance.');
-    process.exit(0);
-  }
+if (require.main === module) {
+  main().catch(console.error);
 }
+
+module.exports = ProductionValidator;

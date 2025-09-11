@@ -2,239 +2,192 @@
 
 /**
  * Image Optimization Script
- * Converts images to WebP format with fallbacks
  * Usage: node scripts/optimize-images.js
  */
 
-const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
-const INPUT_DIR = path.join(__dirname, '../public');
-const OUTPUT_DIR = path.join(__dirname, '../public/optimized');
-
-// Ensure output directory exists
-if (!fs.existsSync(OUTPUT_DIR)) {
-  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-}
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const GALLERY_DIR = path.join(PUBLIC_DIR, 'gallery_images');
 
 // Image optimization settings
-const QUALITY_SETTINGS = {
-  webp: { quality: 85, effort: 6 },
-  avif: { quality: 75, effort: 9 },
-  jpeg: { quality: 85, progressive: true },
-  png: { compressionLevel: 9, adaptiveFiltering: true }
+const OPTIMIZATION_SETTINGS = {
+  // For gallery images
+  gallery: {
+    quality: 85,
+    progressive: true,
+    mozjpeg: true,
+    formats: ['jpeg', 'webp']
+  },
+  // For thumbnails
+  thumbnails: {
+    width: 400,
+    height: 400,
+    quality: 80,
+    fit: 'cover'
+  },
+  // For hero/large images
+  hero: {
+    quality: 90,
+    progressive: true,
+    mozjpeg: true,
+    maxWidth: 1920
+  }
 };
 
-// Responsive image sizes
-const RESPONSIVE_SIZES = [640, 768, 1024, 1280, 1600];
-
-async function optimizeImage(inputPath, outputDir, filename) {
+async function optimizeImage(inputPath, outputPath, settings) {
   try {
     const image = sharp(inputPath);
     const metadata = await image.metadata();
     
-    console.log(`Processing: ${filename} (${metadata.width}x${metadata.height})`);
-
-    // Generate WebP version
-    await image
-      .webp(QUALITY_SETTINGS.webp)
-      .toFile(path.join(outputDir, `${filename}.webp`));
-
-    // Generate AVIF version (modern browsers)
-    await image
-      .avif(QUALITY_SETTINGS.avif)
-      .toFile(path.join(outputDir, `${filename}.avif`));
-
-    // Generate responsive versions for large images
-    if (metadata.width > 800) {
-      for (const size of RESPONSIVE_SIZES) {
-        if (size < metadata.width) {
-          // WebP responsive
-          await image
-            .resize(size, null, { withoutEnlargement: true })
-            .webp(QUALITY_SETTINGS.webp)
-            .toFile(path.join(outputDir, `${filename}-${size}w.webp`));
-
-          // JPEG fallback responsive
-          await image
-            .resize(size, null, { withoutEnlargement: true })
-            .jpeg(QUALITY_SETTINGS.jpeg)
-            .toFile(path.join(outputDir, `${filename}-${size}w.jpg`));
-        }
-      }
+    console.log(`Optimizing: ${path.basename(inputPath)} (${metadata.width}x${metadata.height})`);
+    
+    let pipeline = image;
+    
+    // Resize if needed
+    if (settings.maxWidth && metadata.width > settings.maxWidth) {
+      pipeline = pipeline.resize(settings.maxWidth, null, {
+        withoutEnlargement: true,
+        fit: 'inside'
+      });
     }
-
-    // Optimize original format as fallback
-    const ext = path.extname(inputPath).toLowerCase();
-    if (ext === '.jpg' || ext === '.jpeg') {
-      await image
-        .jpeg(QUALITY_SETTINGS.jpeg)
-        .toFile(path.join(outputDir, `${filename}.jpg`));
-    } else if (ext === '.png') {
-      await image
-        .png(QUALITY_SETTINGS.png)
-        .toFile(path.join(outputDir, `${filename}.png`));
+    
+    if (settings.width && settings.height) {
+      pipeline = pipeline.resize(settings.width, settings.height, {
+        fit: settings.fit || 'cover'
+      });
     }
-
-    console.log(`✅ Optimized: ${filename}`);
+    
+    // Apply JPEG optimization
+    if (inputPath.toLowerCase().includes('.jpg') || inputPath.toLowerCase().includes('.jpeg')) {
+      pipeline = pipeline.jpeg({
+        quality: settings.quality || 85,
+        progressive: settings.progressive || true,
+        mozjpeg: settings.mozjpeg || true
+      });
+    }
+    
+    await pipeline.toFile(outputPath);
+    
+    // Get file sizes
+    const originalSize = fs.statSync(inputPath).size;
+    const optimizedSize = fs.statSync(outputPath).size;
+    const savings = ((originalSize - optimizedSize) / originalSize * 100).toFixed(1);
+    
+    console.log(`  Original: ${(originalSize / 1024).toFixed(1)}KB`);
+    console.log(`  Optimized: ${(optimizedSize / 1024).toFixed(1)}KB`);
+    console.log(`  Savings: ${savings}%\n`);
+    
+    return { originalSize, optimizedSize, savings: parseFloat(savings) };
   } catch (error) {
-    console.error(`❌ Error processing ${filename}:`, error.message);
+    console.error(`Error optimizing ${inputPath}:`, error.message);
+    return null;
   }
 }
 
-async function generateFavicons() {
-  const logoPath = path.join(INPUT_DIR, 'AdonaiTattooLogo.png');
-  
-  if (!fs.existsSync(logoPath)) {
-    console.log('⚠️  Logo not found, skipping favicon generation');
-    return;
+async function generateWebP(inputPath, outputPath) {
+  try {
+    await sharp(inputPath)
+      .webp({ quality: 85, effort: 6 })
+      .toFile(outputPath);
+    console.log(`Generated WebP: ${path.basename(outputPath)}`);
+  } catch (error) {
+    console.error(`Error generating WebP for ${inputPath}:`, error.message);
   }
-
-  console.log('🎨 Generating favicons...');
-  
-  const sizes = [16, 32, 48, 64, 96, 128, 144, 152, 192, 384, 512];
-  
-  for (const size of sizes) {
-    await sharp(logoPath)
-      .resize(size, size)
-      .png()
-      .toFile(path.join(INPUT_DIR, `favicon-${size}x${size}.png`));
-  }
-
-  // Generate ICO file (requires specific library)
-  await sharp(logoPath)
-    .resize(32, 32)
-    .png()
-    .toFile(path.join(INPUT_DIR, 'favicon.ico'));
-
-  // Apple touch icons
-  const appleSizes = [57, 72, 114, 144];
-  for (const size of appleSizes) {
-    await sharp(logoPath)
-      .resize(size, size)
-      .png()
-      .toFile(path.join(INPUT_DIR, `apple-touch-icon-${size}x${size}.png`));
-  }
-
-  console.log('✅ Favicons generated');
 }
 
-async function generateOGImages() {
-  console.log('🖼️  Generating OG images...');
+async function optimizeDirectory(dirPath, settings) {
+  if (!fs.existsSync(dirPath)) {
+    console.log(`Directory ${dirPath} does not exist, skipping...`);
+    return { totalSavings: 0, filesProcessed: 0 };
+  }
   
-  // Create OG image template (1200x630)
-  const ogImage = sharp({
-    create: {
-      width: 1200,
-      height: 630,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 1 }
-    }
-  });
-
-  // Add text overlay (simplified - in production you'd want better text rendering)
-  await ogImage
-    .composite([
-      {
-        input: Buffer.from(`
-          <svg width="1200" height="630">
-            <rect width="1200" height="630" fill="#000000"/>
-            <text x="600" y="300" font-family="Arial" font-size="60" fill="#dc2626" text-anchor="middle">
-              Adonai Tattoo
-            </text>
-            <text x="600" y="380" font-family="Arial" font-size="30" fill="#ffffff" text-anchor="middle">
-              Faith-Inspired Artistry | Evansville, IN
-            </text>
-          </svg>
-        `),
-        top: 0,
-        left: 0,
-      }
-    ])
-    .png()
-    .toFile(path.join(INPUT_DIR, 'og-image.png'));
-
-  // Generate Twitter card (1200x600)
-  await sharp({
-    create: {
-      width: 1200,
-      height: 600,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 1 }
-    }
-  })
-    .composite([
-      {
-        input: Buffer.from(`
-          <svg width="1200" height="600">
-            <rect width="1200" height="600" fill="#000000"/>
-            <text x="600" y="280" font-family="Arial" font-size="55" fill="#dc2626" text-anchor="middle">
-              Adonai Tattoo
-            </text>
-            <text x="600" y="350" font-family="Arial" font-size="28" fill="#ffffff" text-anchor="middle">
-              Faith-Inspired Artistry | Evansville, IN
-            </text>
-          </svg>
-        `),
-        top: 0,
-        left: 0,
-      }
-    ])
-    .png()
-    .toFile(path.join(INPUT_DIR, 'twitter-image.png'));
-
-  console.log('✅ OG images generated');
-}
-
-async function processAllImages() {
-  console.log('🚀 Starting image optimization...');
+  const files = fs.readdirSync(dirPath);
+  const imageFiles = files.filter(file => 
+    /\.(jpg|jpeg|png|webp)$/i.test(file) && !file.includes('.optimized.')
+  );
   
-  // Generate favicons and OG images first
-  await generateFavicons();
-  await generateOGImages();
+  let totalOriginalSize = 0;
+  let totalOptimizedSize = 0;
+  let filesProcessed = 0;
   
-  // Process existing images
-  const files = fs.readdirSync(INPUT_DIR);
-  const imageFiles = files.filter(file => {
-    const ext = path.extname(file).toLowerCase();
-    return ['.jpg', '.jpeg', '.png', '.webp'].includes(ext) && 
-           !file.startsWith('favicon') && 
-           !file.startsWith('apple-touch') &&
-           !file.includes('og-image') &&
-           !file.includes('twitter-image');
-  });
-
   for (const file of imageFiles) {
-    const inputPath = path.join(INPUT_DIR, file);
-    const filename = path.parse(file).name;
-    await optimizeImage(inputPath, OUTPUT_DIR, filename);
-  }
-
-  // Process gallery images
-  const galleryDir = path.join(INPUT_DIR, 'gallery_images');
-  if (fs.existsSync(galleryDir)) {
-    const galleryFiles = fs.readdirSync(galleryDir);
-    const galleryImages = galleryFiles.filter(file => {
-      const ext = path.extname(file).toLowerCase();
-      return ['.jpg', '.jpeg', '.png', '.webp'].includes(ext);
-    });
-
-    const galleryOutputDir = path.join(OUTPUT_DIR, 'gallery_images');
-    if (!fs.existsSync(galleryOutputDir)) {
-      fs.mkdirSync(galleryOutputDir, { recursive: true });
-    }
-
-    for (const file of galleryImages) {
-      const inputPath = path.join(galleryDir, file);
-      const filename = path.parse(file).name;
-      await optimizeImage(inputPath, galleryOutputDir, filename);
+    const inputPath = path.join(dirPath, file);
+    const ext = path.extname(file);
+    const name = path.basename(file, ext);
+    const optimizedPath = path.join(dirPath, `${name}.optimized${ext}`);
+    
+    const result = await optimizeImage(inputPath, optimizedPath, settings);
+    
+    if (result) {
+      totalOriginalSize += result.originalSize;
+      totalOptimizedSize += result.optimizedSize;
+      filesProcessed++;
+      
+      // Generate WebP version if it's a JPEG/PNG
+      if (ext.toLowerCase() !== '.webp') {
+        const webpPath = path.join(dirPath, `${name}.webp`);
+        await generateWebP(inputPath, webpPath);
+      }
     }
   }
-
-  console.log('🎉 Image optimization complete!');
-  console.log(`📊 Processed ${imageFiles.length} images`);
+  
+  return {
+    totalSavings: totalOriginalSize ? ((totalOriginalSize - totalOptimizedSize) / totalOriginalSize * 100) : 0,
+    filesProcessed,
+    totalOriginalSize,
+    totalOptimizedSize
+  };
 }
 
-// Run the optimization
-processAllImages().catch(console.error);
+async function main() {
+  console.log('🖼️  Starting image optimization...\n');
+  
+  const directories = [
+    { path: PUBLIC_DIR, settings: OPTIMIZATION_SETTINGS.hero, name: 'Public Assets' },
+    { path: GALLERY_DIR, settings: OPTIMIZATION_SETTINGS.gallery, name: 'Gallery Images' }
+  ];
+  
+  let grandTotalOriginal = 0;
+  let grandTotalOptimized = 0;
+  let grandTotalFiles = 0;
+  
+  for (const { path: dirPath, settings, name } of directories) {
+    console.log(`📁 Optimizing ${name}...`);
+    const result = await optimizeDirectory(dirPath, settings);
+    
+    console.log(`✅ ${name} complete:`);
+    console.log(`   Files processed: ${result.filesProcessed}`);
+    console.log(`   Total savings: ${result.totalSavings.toFixed(1)}%`);
+    console.log(`   Size reduction: ${((result.totalOriginalSize - result.totalOptimizedSize) / 1024).toFixed(1)}KB\n`);
+    
+    grandTotalOriginal += result.totalOriginalSize;
+    grandTotalOptimized += result.totalOptimizedSize;
+    grandTotalFiles += result.filesProcessed;
+  }
+  
+  console.log('🎉 Optimization Summary:');
+  console.log(`   Total files processed: ${grandTotalFiles}`);
+  console.log(`   Total original size: ${(grandTotalOriginal / 1024 / 1024).toFixed(2)}MB`);
+  console.log(`   Total optimized size: ${(grandTotalOptimized / 1024 / 1024).toFixed(2)}MB`);
+  console.log(`   Total savings: ${grandTotalOriginal ? ((grandTotalOriginal - grandTotalOptimized) / grandTotalOriginal * 100).toFixed(1) : 0}%`);
+  console.log(`   Storage saved: ${((grandTotalOriginal - grandTotalOptimized) / 1024 / 1024).toFixed(2)}MB`);
+  
+  console.log('\n💡 Tips:');
+  console.log('   - WebP versions created for better compression');
+  console.log('   - Use .optimized.jpg files for production');
+  console.log('   - Consider serving WebP to supported browsers');
+}
+
+if (require.main === module) {
+  main().catch(console.error);
+}
+
+module.exports = {
+  optimizeImage,
+  generateWebP,
+  optimizeDirectory,
+  OPTIMIZATION_SETTINGS
+};

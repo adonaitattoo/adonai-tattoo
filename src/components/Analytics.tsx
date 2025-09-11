@@ -41,11 +41,11 @@ export function WebVitals() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        getCLS(console.log);
-        getFID(console.log);
-        getFCP(console.log);
-        getLCP(console.log);
-        getTTFB(console.log);
+        getCLS(() => {});
+        getFID(() => {});
+        getFCP(() => {});
+        getLCP(() => {});
+        getTTFB(() => {});
       });
     }
   }, []);
@@ -74,7 +74,6 @@ export function performanceMonitor() {
       const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
       const loadTime = navigation.loadEventEnd - navigation.loadEventStart;
       
-      console.log('Page load time:', loadTime);
       
       // Send to analytics if configured
       if (window.gtag) {
