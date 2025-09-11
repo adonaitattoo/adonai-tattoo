@@ -31,7 +31,7 @@ export default function HeroSection() {
       </div>
       
       {/* Content - Positioned to Top Right, Moved Slightly Left */}
-      <div className="relative z-20 text-right px-6 md:px-12 py-24 max-w-2xl mr-4 md:mr-8 flex flex-col items-end">
+      <div className="relative z-20 text-right px-6 md:px-12 py-24 max-w-2xl mr-4 md:mr-8 flex flex-col items-center">
         <motion.h1 
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
