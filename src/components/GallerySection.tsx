@@ -43,18 +43,30 @@ export default function GallerySection() {
         params.append('lastImageId', lastImageId);
       }
       
+      console.log(`Fetching gallery: isLoadMore=${isLoadMore}, lastImageId=${lastImageId}`);
+      
       const response = await fetch(`/api/gallery?${params}`);
       const data = await response.json();
+      
+      console.log('Gallery response:', data);
       
       if (response.ok) {
         const newItems = data.images.map((item: GalleryItem) => ({
           ...item,
           height: Math.floor(Math.random() * 200) + 300, // Random height for masonry layout
-          uniqueKey: `img-${item.id}-${Math.random().toString(36).substr(2, 9)}`
+          uniqueKey: `img-${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         }));
         
+        console.log(`Processing ${newItems.length} new items`);
+        
         if (isLoadMore) {
-          setDisplayedItems(prev => [...prev, ...newItems]);
+          // Prevent duplicates by checking if items already exist
+          setDisplayedItems(prev => {
+            const existingIds = new Set(prev.map(item => item.id));
+            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
+            console.log(`Adding ${uniqueNewItems.length} unique new items`);
+            return [...prev, ...uniqueNewItems];
+          });
         } else {
           setDisplayedItems(newItems);
         }

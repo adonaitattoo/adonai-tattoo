@@ -13,12 +13,14 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  orderBy
+  orderBy,
+  getDoc
 } from 'firebase/firestore';
 import { 
   ref,
   uploadBytes,
-  getDownloadURL
+  getDownloadURL,
+  deleteObject
 } from 'firebase/storage';
 
 // Authentication helpers
@@ -120,8 +122,42 @@ export const updateGalleryImage = async (id: string, updateData: Record<string, 
 export const deleteGalleryImage = async (id: string) => {
   verifyAdminAccess();
 
-  const imageRef = doc(db, 'gallery', id);
-  return await deleteDoc(imageRef);
+  try {
+    // First, get the image document to find the storage URL
+    const imageRef = doc(db, 'gallery', id);
+    const imageDoc = await getDoc(imageRef);
+    
+    if (imageDoc.exists()) {
+      const imageData = imageDoc.data();
+      const imageUrl = imageData.imageUrl;
+      
+      // Delete from Storage if we have an imageUrl
+      if (imageUrl && imageUrl.includes('firebase')) {
+        try {
+          // Extract the file path from the Firebase Storage URL
+          const url = new URL(imageUrl);
+          const pathMatch = url.pathname.match(/\/o\/(.+?)\?/);
+          if (pathMatch) {
+            const filePath = decodeURIComponent(pathMatch[1]);
+            const storageRef = ref(storage, filePath);
+            await deleteObject(storageRef);
+            console.log('Successfully deleted image from storage:', filePath);
+          }
+        } catch (storageError) {
+          console.error('Error deleting from storage:', storageError);
+          // Continue with database deletion even if storage deletion fails
+        }
+      }
+    }
+    
+    // Delete from Firestore database
+    await deleteDoc(imageRef);
+    console.log('Successfully deleted image from database:', id);
+    
+  } catch (error) {
+    console.error('Error in deleteGalleryImage:', error);
+    throw error;
+  }
 };
 
 // File upload helper
