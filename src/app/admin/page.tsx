@@ -46,7 +46,7 @@ export default function AdminDashboard() {
 
   const getAdminInfo = () => {
     return {
-      email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'Admin',
+      email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.NEXT_PUBLIC_CLIENT_EMAIL || 'Admin',
       isAdmin: true,
       authenticated: true
     };
@@ -203,9 +203,26 @@ export default function AdminDashboard() {
       const { signInWithEmailAndPassword, updatePassword } = await import('firebase/auth');
       const { auth } = await import('@/lib/firebase');
       
-      // Get current user email
-      const adminInfo = getAdminInfo();
-      const userEmail = currentUser?.email || adminInfo.email;
+      // Get current user email - prioritize actual Firebase user email
+      let userEmail = currentUser?.email;
+      
+      // If no Firebase user email, try to determine from environment
+      if (!userEmail) {
+        // Check both admin and client emails to determine which one this user is
+        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+        const clientEmail = process.env.NEXT_PUBLIC_CLIENT_EMAIL;
+        
+        // For now, we'll need the user to ensure they're using the correct email
+        // This is a fallback and should rarely be needed if Firebase auth is working
+        userEmail = adminEmail || clientEmail || '';
+      }
+      
+      if (!userEmail) {
+        alert('Unable to determine user email. Please refresh the page and try again.');
+        return;
+      }
+      
+      console.log('Attempting password change for email:', userEmail);
       
       // Re-authenticate user with current password
       const credential = await signInWithEmailAndPassword(auth, userEmail, currentPassword);
@@ -223,12 +240,16 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Password change error:', error);
       if (error instanceof Error) {
-        if (error.message.includes('wrong-password')) {
+        if (error.message.includes('wrong-password') || error.message.includes('invalid-credential')) {
           alert('Current password is incorrect');
         } else if (error.message.includes('weak-password')) {
           alert('New password is too weak. Please choose a stronger password.');
+        } else if (error.message.includes('user-not-found') || error.message.includes('invalid-email')) {
+          alert('User account not found. Please contact administrator.');
+        } else if (error.message.includes('too-many-requests')) {
+          alert('Too many failed attempts. Please wait a few minutes before trying again.');
         } else {
-          alert('Failed to update password. Please try again.');
+          alert(`Failed to update password: ${error.message}`);
         }
       }
     } finally {
