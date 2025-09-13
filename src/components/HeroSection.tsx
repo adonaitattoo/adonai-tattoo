@@ -19,7 +19,7 @@ export default function HeroSection() {
       {/* Background Image with Parallax */}
       <div className="parallax-bg z-0">
         <Image
-          src="/Hero_Jesus_Tat.jpg"
+          src="/Hero_New.jpg"
           alt="Adonai Tattoo - Professional Christian Tattoo Artistry"
           fill
           className="object-cover"
