@@ -62,8 +62,8 @@ export default function GallerySection() {
         if (isLoadMore) {
           // Prevent duplicates by checking if items already exist
           setDisplayedItems(prev => {
-            const existingIds = new Set(prev.map(item => item.id));
-            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
+            const existingIds = new Set(prev.map((item: GalleryItem) => item.id));
+            const uniqueNewItems = newItems.filter((item: GalleryItem) => !existingIds.has(item.id));
             console.log(`Adding ${uniqueNewItems.length} unique new items`);
             return [...prev, ...uniqueNewItems];
           });
