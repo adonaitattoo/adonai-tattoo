@@ -47,24 +47,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     const loadCurrentUser = async () => {
       try {
-        console.log('🔍 Loading current user...');
-        
         const user = await getCurrentUser();
-        console.log('🔍 Firebase Auth User:', {
-          email: user?.email,
-          uid: user?.uid,
-          displayName: user?.displayName
-        });
         
         if (user && user.email) {
           setCurrentUser(user);
-          console.log('✅ Set current user to:', user.email);
         } else {
-          console.error('❌ No authenticated user found - redirecting to login');
           router.push('/admin/login');
         }
-      } catch (error) {
-        console.error('❌ Error loading current user:', error);
+      } catch {
         router.push('/admin/login');
       }
     };
@@ -92,8 +82,6 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
-      console.log('🚪 Starting logout process...');
-      
       // 1. Set logout flag for login page
       sessionStorage.setItem('logout-requested', 'true');
       
@@ -101,22 +89,17 @@ export default function AdminDashboard() {
       const { signOut } = await import('firebase/auth');
       const { auth } = await import('@/lib/firebase');
       await signOut(auth);
-      console.log('✅ Firebase Auth signout successful');
       
       // 3. Clear server-side cookie
       await fetch('/api/admin/logout', { method: 'POST' });
-      console.log('✅ Server-side logout successful');
       
       // 4. Clear local state
       setCurrentUser(null);
-      console.log('✅ Local state cleared');
       
       // 5. Redirect to login
       router.push('/admin/login');
-      console.log('✅ Redirected to login');
       
-    } catch (error) {
-      console.error('❌ Logout error:', error);
+    } catch {
       // Even if logout fails, still redirect to login
       sessionStorage.setItem('logout-requested', 'true');
       router.push('/admin/login');
@@ -233,7 +216,6 @@ export default function AdminDashboard() {
         return;
       }
       
-      console.log('Attempting password change for email:', userEmail);
       
       // Re-authenticate user with current password
       const credential = await signInWithEmailAndPassword(auth, userEmail, currentPassword);
@@ -249,7 +231,6 @@ export default function AdminDashboard() {
       
       alert('Password updated successfully!');
     } catch (error) {
-      console.error('Password change error:', error);
       if (error instanceof Error) {
         if (error.message.includes('wrong-password') || error.message.includes('invalid-credential')) {
           alert('Current password is incorrect');

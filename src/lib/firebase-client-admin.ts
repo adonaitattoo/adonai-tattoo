@@ -131,89 +131,28 @@ export const deleteGalleryImage = async (id: string) => {
       const imageData = imageDoc.data();
       const imageUrl = imageData.imageUrl;
       
-      console.log('Attempting to delete image:', { id, imageUrl });
-      
       // Delete from Storage if we have an imageUrl
       if (imageUrl && imageUrl.includes('firebase')) {
         try {
           // Extract the file path from the Firebase Storage URL
           const url = new URL(imageUrl);
-          console.log('Parsed URL:', { pathname: url.pathname, search: url.search });
-          
           const pathMatch = url.pathname.match(/\/o\/(.+?)(\?|$)/);
           if (pathMatch) {
             const filePath = decodeURIComponent(pathMatch[1]);
-            console.log('Extracted file path:', filePath);
-            
             const storageRef = ref(storage, filePath);
             await deleteObject(storageRef);
-            console.log('✅ Successfully deleted image from storage:', filePath);
-          } else {
-            console.error('❌ Could not extract file path from URL:', imageUrl);
           }
-        } catch (storageError) {
-          console.error('❌ Error deleting from storage:', storageError);
-          // Log the specific error details
-          if (storageError instanceof Error) {
-            console.error('Storage error details:', {
-              message: storageError.message,
-              name: storageError.name,
-              stack: storageError.stack
-            });
-          }
+        } catch {
           // Continue with database deletion even if storage deletion fails
         }
-      } else {
-        console.log('⚠️ Skipping storage deletion - no valid Firebase URL found:', imageUrl);
       }
-    } else {
-      console.error('❌ Image document not found:', id);
     }
     
     // Delete from Firestore database
     await deleteDoc(imageRef);
-    console.log('✅ Successfully deleted image from database:', id);
     
   } catch (error) {
-    console.error('❌ Error in deleteGalleryImage:', error);
     throw error;
-  }
-};
-
-// Debug helper to test storage deletion
-export const testStorageDeletion = async (imageUrl: string) => {
-  console.log('🧪 Testing storage deletion for URL:', imageUrl);
-  
-  try {
-    if (!imageUrl || !imageUrl.includes('firebase')) {
-      console.log('❌ Invalid Firebase URL');
-      return false;
-    }
-    
-    const url = new URL(imageUrl);
-    console.log('URL parts:', { 
-      hostname: url.hostname, 
-      pathname: url.pathname, 
-      search: url.search 
-    });
-    
-    const pathMatch = url.pathname.match(/\/o\/(.+?)(\?|$)/);
-    if (!pathMatch) {
-      console.log('❌ Could not extract path from URL');
-      return false;
-    }
-    
-    const filePath = decodeURIComponent(pathMatch[1]);
-    console.log('Extracted path:', filePath);
-    
-    const storageRef = ref(storage, filePath);
-    await deleteObject(storageRef);
-    console.log('✅ Storage deletion test successful');
-    return true;
-    
-  } catch (error) {
-    console.error('❌ Storage deletion test failed:', error);
-    return false;
   }
 };
 

@@ -20,15 +20,13 @@ export default function AdminLogin() {
         // Only clear if there's a logout flag in sessionStorage
         const shouldClear = sessionStorage.getItem('logout-requested');
         if (shouldClear) {
-          console.log('🧹 Clearing Firebase Auth state after logout...');
           const { signOut } = await import('firebase/auth');
           const { auth } = await import('@/lib/firebase');
           await signOut(auth);
           sessionStorage.removeItem('logout-requested');
-          console.log('✅ Firebase Auth cleared after logout');
         }
-      } catch (error) {
-        console.log('ℹ️ No Firebase Auth state to clear');
+      } catch {
+        // Ignore auth clearing errors
       }
     };
     clearAuthStateIfNeeded();
@@ -40,15 +38,11 @@ export default function AdminLogin() {
     setError('');
 
     try {
-      console.log('🔐 Starting login process for:', email);
-      
       // 1. Sign in with Firebase Auth (client-side)
       const { signInWithEmailAndPassword } = await import('firebase/auth');
       const { auth } = await import('@/lib/firebase');
       
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      console.log('✅ Firebase Auth successful for:', user.email);
+      await signInWithEmailAndPassword(auth, email, password);
       
       // 2. Also authenticate with server (for cookie)
       const response = await fetch('/api/admin/login', {
@@ -60,7 +54,6 @@ export default function AdminLogin() {
       });
 
       if (response.ok) {
-        console.log('✅ Server auth successful');
         // Login successful, redirect to admin dashboard
         router.push('/admin');
         router.refresh();
@@ -69,7 +62,6 @@ export default function AdminLogin() {
         setError(data.error || 'Login failed');
       }
     } catch (error) {
-      console.error('❌ Login error:', error);
       if (error instanceof Error) {
         if (error.message.includes('wrong-password') || error.message.includes('invalid-credential')) {
           setError('Invalid email or password');
