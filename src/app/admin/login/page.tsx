@@ -13,21 +13,25 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  // Ensure clean Firebase Auth state on login page load
+  // Only clear auth state if we came from a logout
   useEffect(() => {
-    const clearAuthState = async () => {
+    const clearAuthStateIfNeeded = async () => {
       try {
-        console.log('🧹 Clearing Firebase Auth state on login page...');
-        const { signOut } = await import('firebase/auth');
-        const { auth } = await import('@/lib/firebase');
-        await signOut(auth);
-        console.log('✅ Firebase Auth cleared');
+        // Only clear if there's a logout flag in sessionStorage
+        const shouldClear = sessionStorage.getItem('logout-requested');
+        if (shouldClear) {
+          console.log('🧹 Clearing Firebase Auth state after logout...');
+          const { signOut } = await import('firebase/auth');
+          const { auth } = await import('@/lib/firebase');
+          await signOut(auth);
+          sessionStorage.removeItem('logout-requested');
+          console.log('✅ Firebase Auth cleared after logout');
+        }
       } catch (error) {
-        // Ignore errors - user might not be signed in
         console.log('ℹ️ No Firebase Auth state to clear');
       }
     };
-    clearAuthState();
+    clearAuthStateIfNeeded();
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {

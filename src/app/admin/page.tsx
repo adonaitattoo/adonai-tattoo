@@ -48,6 +48,10 @@ export default function AdminDashboard() {
     const loadCurrentUser = async () => {
       try {
         console.log('🔍 Loading current user...');
+        
+        // Small delay to let Firebase Auth initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const user = await getCurrentUser();
         console.log('🔍 Firebase Auth User:', {
           email: user?.email,
@@ -67,6 +71,7 @@ export default function AdminDashboard() {
         router.push('/admin/login');
       }
     };
+    
     loadCurrentUser();
     fetchImages();
   }, [router]);
@@ -92,28 +97,31 @@ export default function AdminDashboard() {
     try {
       console.log('🚪 Starting logout process...');
       
-      // 1. Sign out from Firebase Auth (client-side)
+      // 1. Set logout flag for login page
+      sessionStorage.setItem('logout-requested', 'true');
+      
+      // 2. Sign out from Firebase Auth (client-side)
       const { signOut } = await import('firebase/auth');
       const { auth } = await import('@/lib/firebase');
       await signOut(auth);
       console.log('✅ Firebase Auth signout successful');
       
-      // 2. Clear server-side cookie
+      // 3. Clear server-side cookie
       await fetch('/api/admin/logout', { method: 'POST' });
       console.log('✅ Server-side logout successful');
       
-      // 3. Clear local state
+      // 4. Clear local state
       setCurrentUser(null);
       console.log('✅ Local state cleared');
       
-      // 4. Redirect to login
+      // 5. Redirect to login
       router.push('/admin/login');
-      router.refresh();
       console.log('✅ Redirected to login');
       
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Even if logout fails, still redirect to login
+      sessionStorage.setItem('logout-requested', 'true');
       router.push('/admin/login');
     }
   };
