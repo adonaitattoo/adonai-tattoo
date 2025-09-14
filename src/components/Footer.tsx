@@ -77,7 +77,7 @@ export default function Footer() {
         {/* Bottom Section */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">
-            <p className="text-gray-400 mb-2">© 2024 Adonai Tattoo. All rights reserved.</p>
+            <p className="text-gray-400 mb-2">© 2025 Adonai Tattoo. All rights reserved.</p>
             <p className="text-gray-500 text-sm">
               Honoring God through art and community in Evansville, IN
             </p>
