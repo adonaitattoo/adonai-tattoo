@@ -40,6 +40,17 @@ export default function AdminLogin() {
     setError('');
 
     try {
+      console.log('🔐 Starting login process for:', email);
+      
+      // 1. Sign in with Firebase Auth (client-side)
+      const { signInWithEmailAndPassword } = await import('firebase/auth');
+      const { auth } = await import('@/lib/firebase');
+      
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      console.log('✅ Firebase Auth successful for:', user.email);
+      
+      // 2. Also authenticate with server (for cookie)
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: {
@@ -49,6 +60,7 @@ export default function AdminLogin() {
       });
 
       if (response.ok) {
+        console.log('✅ Server auth successful');
         // Login successful, redirect to admin dashboard
         router.push('/admin');
         router.refresh();
@@ -56,8 +68,21 @@ export default function AdminLogin() {
         const data = await response.json();
         setError(data.error || 'Login failed');
       }
-    } catch {
-      setError('Network error. Please try again.');
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('wrong-password') || error.message.includes('invalid-credential')) {
+          setError('Invalid email or password');
+        } else if (error.message.includes('user-not-found') || error.message.includes('invalid-email')) {
+          setError('Invalid email or password');
+        } else if (error.message.includes('too-many-requests')) {
+          setError('Too many failed attempts. Please wait a few minutes.');
+        } else {
+          setError('Login failed. Please try again.');
+        }
+      } else {
+        setError('Network error. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

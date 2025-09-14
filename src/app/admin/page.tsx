@@ -49,9 +49,6 @@ export default function AdminDashboard() {
       try {
         console.log('🔍 Loading current user...');
         
-        // Small delay to let Firebase Auth initialize
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
         const user = await getCurrentUser();
         console.log('🔍 Firebase Auth User:', {
           email: user?.email,
