@@ -29,7 +29,7 @@ export default function LogoBadge({ isScrolled = false, onClick, hideTitleOnMobi
           isScrolled ? 'text-white hover:text-red-900' : 'text-white hover:text-red-900'
         }`}>Adonai</h1>
         <p className={`text-sm transition-colors duration-300 ${
-          isScrolled ? 'text-white' : 'text-gray-800'
+          isScrolled ? 'text-white' : 'text-white'
         }`}>Tattoo</p>
       </div>
     </button>
