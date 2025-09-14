@@ -44,35 +44,24 @@ export default function AdminDashboard() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const router = useRouter();
 
-  const getAdminInfo = () => {
-    return {
-      email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.NEXT_PUBLIC_CLIENT_EMAIL || 'Admin',
-      isAdmin: true,
-      authenticated: true
-    };
-  };
-
   useEffect(() => {
     const loadCurrentUser = async () => {
       try {
         const user = await getCurrentUser();
-        setCurrentUser(user);
         
-        if (!user) {
-          const adminInfo = getAdminInfo();
-          setCurrentUser({
-            email: adminInfo.email,
-            displayName: 'Admin',
-            uid: 'admin'
-          } as FirebaseUser);
+        if (user && user.email) {
+          setCurrentUser(user);
+        } else {
+          router.push('/admin/login');
         }
-      } catch (error) {
-        console.error('Error loading current user:', error);
+      } catch {
+        router.push('/admin/login');
       }
     };
+    
     loadCurrentUser();
     fetchImages();
-  }, []);
+  }, [router]);
 
   const fetchImages = async () => {
     try {
@@ -93,11 +82,27 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
+      // 1. Set logout flag for login page
+      sessionStorage.setItem('logout-requested', 'true');
+      
+      // 2. Sign out from Firebase Auth (client-side)
+      const { signOut } = await import('firebase/auth');
+      const { auth } = await import('@/lib/firebase');
+      await signOut(auth);
+      
+      // 3. Clear server-side cookie
       await fetch('/api/admin/logout', { method: 'POST' });
+      
+      // 4. Clear local state
+      setCurrentUser(null);
+      
+      // 5. Redirect to login
       router.push('/admin/login');
-      router.refresh();
-    } catch (error) {
-      console.error('Logout error:', error);
+      
+    } catch {
+      // Even if logout fails, still redirect to login
+      sessionStorage.setItem('logout-requested', 'true');
+      router.push('/admin/login');
     }
   };
 
