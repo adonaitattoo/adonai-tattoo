@@ -44,35 +44,32 @@ export default function AdminDashboard() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const router = useRouter();
 
-  const getAdminInfo = () => {
-    return {
-      email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.NEXT_PUBLIC_CLIENT_EMAIL || 'Admin',
-      isAdmin: true,
-      authenticated: true
-    };
-  };
-
   useEffect(() => {
     const loadCurrentUser = async () => {
       try {
+        console.log('🔍 Loading current user...');
         const user = await getCurrentUser();
-        setCurrentUser(user);
+        console.log('🔍 Firebase Auth User:', {
+          email: user?.email,
+          uid: user?.uid,
+          displayName: user?.displayName
+        });
         
-        if (!user) {
-          const adminInfo = getAdminInfo();
-          setCurrentUser({
-            email: adminInfo.email,
-            displayName: 'Admin',
-            uid: 'admin'
-          } as FirebaseUser);
+        if (user && user.email) {
+          setCurrentUser(user);
+          console.log('✅ Set current user to:', user.email);
+        } else {
+          console.error('❌ No authenticated user found - redirecting to login');
+          router.push('/admin/login');
         }
       } catch (error) {
-        console.error('Error loading current user:', error);
+        console.error('❌ Error loading current user:', error);
+        router.push('/admin/login');
       }
     };
     loadCurrentUser();
     fetchImages();
-  }, []);
+  }, [router]);
 
   const fetchImages = async () => {
     try {
@@ -203,22 +200,11 @@ export default function AdminDashboard() {
       const { signInWithEmailAndPassword, updatePassword } = await import('firebase/auth');
       const { auth } = await import('@/lib/firebase');
       
-      // Get current user email - prioritize actual Firebase user email
-      let userEmail = currentUser?.email;
-      
-      // If no Firebase user email, try to determine from environment
-      if (!userEmail) {
-        // Check both admin and client emails to determine which one this user is
-        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-        const clientEmail = process.env.NEXT_PUBLIC_CLIENT_EMAIL;
-        
-        // For now, we'll need the user to ensure they're using the correct email
-        // This is a fallback and should rarely be needed if Firebase auth is working
-        userEmail = adminEmail || clientEmail || '';
-      }
+      // Get current user email from Firebase Auth
+      const userEmail = currentUser?.email;
       
       if (!userEmail) {
-        alert('Unable to determine user email. Please refresh the page and try again.');
+        alert('Unable to determine user email. Please refresh the page and try logging in again.');
         return;
       }
       
