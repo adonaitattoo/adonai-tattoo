@@ -36,7 +36,7 @@ export default function GallerySection() {
     
     try {
       const params = new URLSearchParams({
-        limit: '9',
+        limit: isLoadMore ? '6' : '12', // 12 initial, 6 per load more
       });
       
       if (isLoadMore && lastImageId) {
