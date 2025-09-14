@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 
@@ -13,38 +13,12 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  // Only clear auth state if we came from a logout
-  useEffect(() => {
-    const clearAuthStateIfNeeded = async () => {
-      try {
-        // Only clear if there's a logout flag in sessionStorage
-        const shouldClear = sessionStorage.getItem('logout-requested');
-        if (shouldClear) {
-          const { signOut } = await import('firebase/auth');
-          const { auth } = await import('@/lib/firebase');
-          await signOut(auth);
-          sessionStorage.removeItem('logout-requested');
-        }
-      } catch {
-        // Ignore auth clearing errors
-      }
-    };
-    clearAuthStateIfNeeded();
-  }, []);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      // 1. Sign in with Firebase Auth (client-side)
-      const { signInWithEmailAndPassword } = await import('firebase/auth');
-      const { auth } = await import('@/lib/firebase');
-      
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      // 2. Also authenticate with server (for cookie)
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: {
@@ -61,20 +35,8 @@ export default function AdminLogin() {
         const data = await response.json();
         setError(data.error || 'Login failed');
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message.includes('wrong-password') || error.message.includes('invalid-credential')) {
-          setError('Invalid email or password');
-        } else if (error.message.includes('user-not-found') || error.message.includes('invalid-email')) {
-          setError('Invalid email or password');
-        } else if (error.message.includes('too-many-requests')) {
-          setError('Too many failed attempts. Please wait a few minutes.');
-        } else {
-          setError('Login failed. Please try again.');
-        }
-      } else {
-        setError('Network error. Please try again.');
-      }
+    } catch {
+      setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }

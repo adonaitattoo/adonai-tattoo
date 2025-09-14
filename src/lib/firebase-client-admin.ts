@@ -136,13 +136,15 @@ export const deleteGalleryImage = async (id: string) => {
         try {
           // Extract the file path from the Firebase Storage URL
           const url = new URL(imageUrl);
-          const pathMatch = url.pathname.match(/\/o\/(.+?)(\?|$)/);
+          const pathMatch = url.pathname.match(/\/o\/(.+?)\?/);
           if (pathMatch) {
             const filePath = decodeURIComponent(pathMatch[1]);
             const storageRef = ref(storage, filePath);
             await deleteObject(storageRef);
+            console.log('Successfully deleted image from storage:', filePath);
           }
-        } catch {
+        } catch (storageError) {
+          console.error('Error deleting from storage:', storageError);
           // Continue with database deletion even if storage deletion fails
         }
       }
@@ -150,8 +152,10 @@ export const deleteGalleryImage = async (id: string) => {
     
     // Delete from Firestore database
     await deleteDoc(imageRef);
+    console.log('Successfully deleted image from database:', id);
     
   } catch (error) {
+    console.error('Error in deleteGalleryImage:', error);
     throw error;
   }
 };

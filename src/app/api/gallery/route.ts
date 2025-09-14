@@ -56,13 +56,16 @@ export async function GET(request: NextRequest) {
 
     const newLastImageId = images.length > 0 ? images[images.length - 1].id : null;
 
+    console.log(`Gallery API: Returning ${images.length} images, hasMore: ${hasMore}, lastImageId: ${newLastImageId}`);
 
     return NextResponse.json({ 
       images,
       hasMore,
       lastImageId: newLastImageId
     });
-  } catch {
+  } catch (error) {
+    console.error('Error fetching public gallery:', error);
+    
     // Return fallback data in case of error
     return NextResponse.json({ 
       images: [],

@@ -9,6 +9,7 @@ updates:
       time: "09:00"
       timezone: "America/Indiana/Indianapolis"
     open-pull-requests-limit: 10
+    
     # reviewers:
     #   - "your-github-username"
     # assignees:
@@ -43,10 +44,11 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
       day: "monday"
       time: "09:00"
       timezone: "America/Indiana/Indianapolis"
     commit-message:
       prefix: "ci"
       include: "scope"
+    open-pull-requests-limit: 2

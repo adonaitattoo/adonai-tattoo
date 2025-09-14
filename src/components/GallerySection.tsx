@@ -36,15 +36,19 @@ export default function GallerySection() {
     
     try {
       const params = new URLSearchParams({
-        limit: isLoadMore ? '6' : '12', // 12 initial, 6 per load more
+        limit: '9',
       });
       
       if (isLoadMore && lastImageId) {
         params.append('lastImageId', lastImageId);
       }
       
+      console.log(`Fetching gallery: isLoadMore=${isLoadMore}, lastImageId=${lastImageId}`);
+      
       const response = await fetch(`/api/gallery?${params}`);
       const data = await response.json();
+      
+      console.log('Gallery response:', data);
       
       if (response.ok) {
         const newItems = data.images.map((item: GalleryItem) => ({
@@ -53,11 +57,14 @@ export default function GallerySection() {
           uniqueKey: `img-${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         }));
         
+        console.log(`Processing ${newItems.length} new items`);
+        
         if (isLoadMore) {
           // Prevent duplicates by checking if items already exist
           setDisplayedItems(prev => {
             const existingIds = new Set(prev.map((item: GalleryItem) => item.id));
             const uniqueNewItems = newItems.filter((item: GalleryItem) => !existingIds.has(item.id));
+            console.log(`Adding ${uniqueNewItems.length} unique new items`);
             return [...prev, ...uniqueNewItems];
           });
         } else {
@@ -79,7 +86,8 @@ export default function GallerySection() {
         setHasMore(false);
         setAllLoaded(true);
       }
-    } catch {
+    } catch (error) {
+      console.error('Error fetching gallery:', error);
       setError('Unable to load gallery');
       if (!isLoadMore) {
         setDisplayedItems([]);
