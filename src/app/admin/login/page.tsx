@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 
@@ -12,6 +12,23 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  // Ensure clean Firebase Auth state on login page load
+  useEffect(() => {
+    const clearAuthState = async () => {
+      try {
+        console.log('🧹 Clearing Firebase Auth state on login page...');
+        const { signOut } = await import('firebase/auth');
+        const { auth } = await import('@/lib/firebase');
+        await signOut(auth);
+        console.log('✅ Firebase Auth cleared');
+      } catch (error) {
+        // Ignore errors - user might not be signed in
+        console.log('ℹ️ No Firebase Auth state to clear');
+      }
+    };
+    clearAuthState();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

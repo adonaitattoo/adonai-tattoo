@@ -90,11 +90,31 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
+      console.log('🚪 Starting logout process...');
+      
+      // 1. Sign out from Firebase Auth (client-side)
+      const { signOut } = await import('firebase/auth');
+      const { auth } = await import('@/lib/firebase');
+      await signOut(auth);
+      console.log('✅ Firebase Auth signout successful');
+      
+      // 2. Clear server-side cookie
       await fetch('/api/admin/logout', { method: 'POST' });
+      console.log('✅ Server-side logout successful');
+      
+      // 3. Clear local state
+      setCurrentUser(null);
+      console.log('✅ Local state cleared');
+      
+      // 4. Redirect to login
       router.push('/admin/login');
       router.refresh();
+      console.log('✅ Redirected to login');
+      
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ Logout error:', error);
+      // Even if logout fails, still redirect to login
+      router.push('/admin/login');
     }
   };
 
