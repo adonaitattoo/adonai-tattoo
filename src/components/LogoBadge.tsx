@@ -26,10 +26,10 @@ export default function LogoBadge({ isScrolled = false, onClick, hideTitleOnMobi
       </div>
       <div className={hideTitleOnMobile ? 'hidden md:block' : ''}>
         <h1 className={`text-2xl font-bold transition-colors duration-300 ${
-          isScrolled ? 'text-white hover:text-red-900' : 'text-neutral-300 hover:text-red-900'
+          isScrolled ? 'text-white hover:text-red-900' : 'text-white hover:text-red-900'
         }`}>Adonai</h1>
         <p className={`text-sm transition-colors duration-300 ${
-          isScrolled ? 'text-gray-300' : 'text-gray-800'
+          isScrolled ? 'text-white' : 'text-gray-800'
         }`}>Tattoo</p>
       </div>
     </button>
