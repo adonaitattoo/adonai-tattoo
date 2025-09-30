@@ -26,9 +26,9 @@
   },
   "dependencies": {
     "firebase": "^12.3.0",
-    "framer-motion": "^12.23.12",
+    "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
-    "next": "15.5.3",
+    "next": "15.5.4",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "web-vitals": "^3.5.0"
