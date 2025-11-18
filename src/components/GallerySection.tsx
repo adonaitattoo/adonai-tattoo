@@ -176,17 +176,19 @@ export default function GallerySection() {
               >
                 {/* Image */}
                 <div className="absolute inset-0">
-                  <Image
-                    src={item.imageUrl}
-                    alt={item.title}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                    priority={index < 9}
-                    unoptimized={true}
-                    onError={() => {
-                    }}
-                  />
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.title}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                      priority={index < 9}
+                      unoptimized={true}
+                      onError={() => {
+                      }}
+                    />
+                  </div>
                 </div>
               
               {/* Simple hover overlay for visual effect only */}

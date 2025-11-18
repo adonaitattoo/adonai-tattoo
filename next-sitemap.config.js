@@ -25,7 +25,8 @@ module.exports = {
       'https://adonai-tattoo.vercel.app/sitemap.xml',
     ],
   },
-  transform: async (config, path) => {
+  transform: async (_unused, path) => {
+    void _unused;
     // Customize sitemap entries
     const defaultTransform = {
       loc: path,
@@ -62,7 +63,7 @@ module.exports = {
     '*.json',
     '*.txt',
   ],
-  additionalPaths: async (config) => [
+  additionalPaths: async () => [
     {
       loc: '/#values',
       changefreq: 'monthly',

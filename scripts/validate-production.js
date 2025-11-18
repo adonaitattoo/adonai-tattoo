@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 /**
  * Production Readiness Validation Script
  * Usage: node scripts/validate-production.js

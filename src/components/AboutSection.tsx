@@ -33,14 +33,16 @@ export default function AboutSection() {
     <section ref={parallaxRef} className="relative py-24 overflow-hidden parallax-container">
       {/* Background Image with Parallax */}
       <div className="parallax-bg z-0">
-        <Image
-          src="/Gallery_background.png"
-          alt="Adonai Tattoo Gallery Background"
-          fill
-          className="object-cover"
-          sizes="100vw"
-          priority
-        />
+        <div className="relative w-full h-full">
+          <Image
+            src="/Gallery_background.png"
+            alt="Adonai Tattoo Gallery Background"
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority
+          />
+        </div>
         <div className="absolute inset-0 bg-black/75"></div>
       </div>
 

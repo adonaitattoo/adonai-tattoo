@@ -18,14 +18,17 @@ export default function HeroSection() {
     >
       {/* Background Image with Parallax */}
       <div className="parallax-bg z-0">
-        <Image
-          src="/Hero_New.jpg"
-          alt="Adonai Tattoo - Professional Christian Tattoo Artistry"
-          fill
-          className="object-cover"
-          priority
-          quality={95}
-        />
+        <div className="relative w-full h-full">
+          <Image
+            src="/Hero_New.jpg"
+            alt="Adonai Tattoo - Professional Christian Tattoo Artistry"
+            fill
+            className="object-cover"
+            priority
+            quality={95}
+            sizes="100vw"
+          />
+        </div>
         {/* Dark overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
       </div>
