@@ -21,6 +21,7 @@ export default function LogoBadge({ isScrolled = false, onClick, hideTitleOnMobi
           fill
           className="object-cover rounded-lg transition-all duration-300 hover:brightness-110"
           priority
+          loading="eager"
           sizes="64px"
         />
       </div>
