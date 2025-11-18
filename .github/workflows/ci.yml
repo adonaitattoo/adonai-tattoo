@@ -79,7 +79,7 @@ jobs:
           NEXT_PUBLIC_MESSENGER_URL: "https://m.me/adonaitattoo"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build-files
           path: .next/
@@ -155,7 +155,7 @@ jobs:
           ANALYZE: true
 
       - name: Upload bundle analysis
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bundle-analysis
           path: .next/analyze/
