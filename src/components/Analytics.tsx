@@ -40,12 +40,12 @@ export function GoogleAnalytics() {
 export function WebVitals() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        getCLS(() => {});
-        getFID(() => {});
-        getFCP(() => {});
-        getLCP(() => {});
-        getTTFB(() => {});
+      import('web-vitals').then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
+        onCLS(() => {});
+        onINP(() => {});
+        onFCP(() => {});
+        onLCP(() => {});
+        onTTFB(() => {});
       });
     }
   }, []);
