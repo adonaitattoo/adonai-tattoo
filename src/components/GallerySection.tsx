@@ -26,6 +26,7 @@ export default function GallerySection() {
   const [lastImageId, setLastImageId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
+  const [lightboxItem, setLightboxItem] = useState<GalleryItem | null>(null);
 
   // Fetch images from Firebase
   const fetchGalleryImages = useCallback(async (isLoadMore = false) => {
@@ -36,7 +37,7 @@ export default function GallerySection() {
     
     try {
       const params = new URLSearchParams({
-        limit: '9',
+        limit: '18',
       });
       
       if (isLoadMore && lastImageId) {
@@ -53,7 +54,6 @@ export default function GallerySection() {
       if (response.ok) {
         const newItems = data.images.map((item: GalleryItem) => ({
           ...item,
-          height: Math.floor(Math.random() * 200) + 300, // Random height for masonry layout
           uniqueKey: `img-${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         }));
         
@@ -171,24 +171,23 @@ export default function GallerySection() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: (index % 6) * 0.1 }}
-                className="gallery-item group relative bg-neutral-800 rounded-lg overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer shadow-xl hover:shadow-2xl border border-white/10 hover:border-brand-red/30 break-inside-avoid mb-4"
-                style={{ height: `${item.height}px` }}
+                className="gallery-item group relative bg-neutral-900 rounded-lg overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer shadow-xl hover:shadow-2xl border border-white/10 hover:border-brand-red/30 break-inside-avoid mb-4"
+                onClick={() => setLightboxItem(item)}
               >
                 {/* Image */}
-                <div className="absolute inset-0">
-                  <div className="relative w-full h-full">
-                    <Image
-                      src={item.imageUrl}
-                      alt={item.title}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                      priority={index < 9}
-                      unoptimized={true}
-                      onError={() => {
-                      }}
-                    />
-                  </div>
+                <div className="relative w-full bg-black">
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.title}
+                    width={800}
+                    height={1000}
+                    className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-500"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                    priority={index < 18}
+                    unoptimized
+                    onError={() => {
+                    }}
+                  />
                 </div>
               
               {/* Simple hover overlay for visual effect only */}
@@ -249,6 +248,36 @@ export default function GallerySection() {
           </motion.div>
         )}
       </div>
+      {/* Lightbox overlay */}
+      {lightboxItem && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center px-4 py-8">
+          <button
+            type="button"
+            className="absolute top-4 right-4 md:top-8 md:right-8 text-gray-300 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 border border-white/20 transition-colors"
+            onClick={() => setLightboxItem(null)}
+            aria-label="Close image preview"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="relative w-full max-w-5xl h-[70vh] md:h-[80vh]">
+            <Image
+              src={lightboxItem.imageUrl}
+              alt={lightboxItem.title}
+              fill
+              className="object-contain"
+              sizes="100vw"
+              unoptimized
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
