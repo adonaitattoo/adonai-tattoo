@@ -18,6 +18,14 @@ updates:
       prefix: "deps"
       prefix-development: "deps-dev"
       include: "scope"
+    # Ignore major version bumps that need manual testing
+    ignore:
+      - dependency-name: "lucide-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     # Group dependencies for cleaner PRs
     groups:
       react-ecosystem:
