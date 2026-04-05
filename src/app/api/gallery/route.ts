@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, limit, startAfter, doc, getDoc } from 'firebase/firestore';
 
+export const dynamic = 'force-dynamic';
+
 // GET - Fetch gallery images for public display
 export async function GET(request: NextRequest) {
   try {
